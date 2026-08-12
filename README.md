@@ -133,7 +133,7 @@ We highly value your feedback! If you test or use NoteAI Task Terminal, please c
 
 ## 👤 Author & Credits
 Created with ❤️ by Rinwikun
-Distributed under the [MIT License](https://choosealicense.com/licenses/mit/).
+Distributed under the [MIT License](https://github.com/Rinwikun/NoteAITask/edit/main/LICENSE).
 
 ## ☕ Support the Project
 [![Trakteer](https://img.shields.io/badge/Trakteer-Traktir%20Coffee-red?style=for-the-badge&logo=coffee&logoColor=white)](https://trakteer.id/erwin%20wijaya)
