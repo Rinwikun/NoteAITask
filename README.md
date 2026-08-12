@@ -63,6 +63,7 @@ Below is the status matrix of the feature development roadmap for **NoteAI Task 
 ![Settings View Screenshot](https://github.com/Rinwikun/NoteAITask/blob/main/NoteAITask/Assets/images/settings.png)
 
 ---
+
 ## Image and Video assets are sourced from the official
 <details>
   <summary>🖼️ Click to view the image</summary>
@@ -93,6 +94,7 @@ Below is the status matrix of the feature development roadmap for **NoteAI Task 
   <video src="https://github.com/user-attachments/assets/e0830efe-49d3-4cdb-9f49-25aa34add25e" controls="controls" style="max-width: 100%;">
   </video>
 </details>
+
 ---
 
 ## 🚀 How to Run the Project
@@ -115,6 +117,9 @@ Below is the status matrix of the feature development roadmap for **NoteAI Task 
 	# Run application
 	dotnet run
 	'''
+
+---
+
 ### 🔒 Security & Protection Architecture
 #### This application is built using enterprise-grade protection mechanisms:
 - **Single-File Executable**: Embedded runtime dependencies; no external framework installation required.
@@ -124,6 +129,8 @@ Below is the status matrix of the feature development roadmap for **NoteAI Task 
 - **Local AI Model Enforcement**: All AI model interactions are strictly local; no external API calls are made, ensuring data privacy.
 - **Path Leakage Prevention**: The AI agent is designed to resolve and validate paths without exposing sensitive directory structures.
 - **Execution Sandbox**: All terminal commands are executed in a controlled environment to prevent unauthorized system modifications.
+
+---
 
 ## 💬 Feedback, Reviews & Community Testing
 ### 📌 Solo Developer Note
