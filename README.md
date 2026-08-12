@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Assets/logo/logo-app.png" alt="NoteAI Task Terminal Logo App" width="128" />
+  <img src="https://github.com/Rinwikun/NoteAITask/blob/main/NoteAITask/Assets/logo/logo-app.png" alt="NoteAI Task Terminal Logo App" width="128" />
 </p>
 
 <h1 align="center">NoteAI Task Terminal</h1>
@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![NET Target](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![AvaloniaUI](https://img.shields.io/badge/UI-AvaloniaUI-purple?logo=avalonia)](https://avaloniaui.net/)
-[![Ollama](https://img.shields.io/badge/AI Engine-Ollama-black?logo=ollama)](https://ollama.ai/)
+[![Ollama](https://img.shields.io/badge/AI%20Engine-Ollama-black?logo=ollama&logoColor=white)](https://ollama.com/)
 [![Release Stage](https://img.shields.io/badge/Release-v1.0.0--beta-brightgreen)]()
 
 > ⚠️ **Language Notice:** Currently, this application interface and logging output are exclusively in **Indonesian (Bahasa Indonesia)**. Multi-language (i18n / English) support is planned for future updates.
@@ -47,7 +47,7 @@ Below is the status matrix of the feature development roadmap for **NoteAI Task 
 
 | 🤖 AI Terminal Agent Demo | 📝 Note Dual-View Explorer |
 | :---: | :---: |
-| ![AI Agent Demo](Assets/videos/note-ai-terminal.mp4) | ![Dual View Demo](Assets/videos/note.mp4) |
+| ![AI Agent Demo](https://github.com/Rinwikun/NoteAITask/blob/main/NoteAITask/Assets/videos/note-ai-terminal.mp4) | ![Dual View Demo](https://github.com/Rinwikun/NoteAITask/blob/main/NoteAITask/Assets/videos/note.mp4) |
 
 ---
 
@@ -60,7 +60,7 @@ Below is the status matrix of the feature development roadmap for **NoteAI Task 
 * **Protection Layer:** Single-File Native Deployment, Symbol Stripping, and Obfuscar Code Scrambling
 
 ### ⚙️ Local AI Engine & System Prompt Configuration
-![Settings View Screenshot](Assets/images/settings.png)
+![Settings View Screenshot](https://github.com/Rinwikun/NoteAITask/blob/main/NoteAITask/Assets/images/settings.png)
 
 ---
 ## Image and Video assets are sourced from the official
@@ -68,25 +68,25 @@ Below is the status matrix of the feature development roadmap for **NoteAI Task 
   <summary>Click to view the image</summary>
 
   ### image 1
-  ![Note](Assets/images/note.png)
+  ![Note](https://github.com/Rinwikun/NoteAITask/blob/main/NoteAITask/Assets/images/note.png)
 
   ### image 2
-  ![Note Terminal](Assets/images/note-terminal.png)
+  ![Note Terminal](https://github.com/Rinwikun/NoteAITask/blob/main/NoteAITask/Assets/images/note-terminal.png)
 
   ### image 3
-  ![Note AI Terminal](Assets/images/note-ai-terminal.png)	
+  ![Note AI Terminal](https://github.com/Rinwikun/NoteAITask/blob/main/NoteAITask/Assets/images/note-ai-terminal.png)	
 </details>
 <details>
   <summary>Click to view the video</summary>
 
   ### video 1
-  ![Note](Assets/videos/note.mp4)
+  ![Note](https://github.com/Rinwikun/NoteAITask/blob/main/NoteAITask/Assets/videos/note.mp4)
 
   ### video 2
-  ![Note Terminal](Assets/videos/note-terminal.mp4)
+  ![Note Terminal](https://github.com/Rinwikun/NoteAITask/blob/main/NoteAITask/Assets/videos/note-terminal.mp4)
 
   ### video 3
-  ![Note AI Terminal](Assets/videos/note-ai-terminal.mp4)	
+  ![Note AI Terminal](https://github.com/Rinwikun/NoteAITask/blob/main/NoteAITask/Assets/videos/note-ai-terminal.mp4)	
 </details>
 
 ---
