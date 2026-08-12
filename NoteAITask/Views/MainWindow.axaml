@@ -1,0 +1,73 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:NoteAITask.ViewModels"
+        xmlns:views="using:NoteAITask.Views"
+        x:Class="NoteAITask.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Note AI Task" 
+        Width="1000" Height="650"
+        WindowStartupLocation="CenterScreen"
+        Background="#181825">
+
+    <Grid ColumnDefinitions="220, *">
+        <!-- SIDEBAR NAVIGASI (KIRI) -->
+        <Border Grid.Column="0" Background="#1E1E2E" Padding="15">
+            <Grid RowDefinitions="Auto, *, Auto">
+                <!-- Header Aplikasi -->
+                <StackPanel Grid.Row="0" Spacing="5" Margin="0,0,0,20">
+                    <TextBlock Text="Note AI Task" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock Text="Local AI &amp; Shell Helper" FontSize="11" Foreground="#89B4FA"/>
+                </StackPanel>
+
+                <!-- Tombol Navigasi Menu -->
+                <StackPanel Grid.Row="1" Spacing="8">
+                    <!-- 1. NOTE -->
+                    <Button Content="📝 Note" Command="{Binding NavigateToNoteCommand}" 
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Background="{Binding NoteTabBg}" Foreground="{Binding NoteTabFg}" 
+                            FontWeight="Bold" CornerRadius="6" Padding="12,8"/>
+
+                    <!-- 2. NOTE TERMINAL -->
+                    <Button Content="💻 Note Terminal" Command="{Binding NavigateToShellCommand}" 
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Background="{Binding ShellTabBg}" Foreground="{Binding ShellTabFg}" 
+                            FontWeight="Bold" CornerRadius="6" Padding="12,8"/>
+
+                    <!-- 3. NOTE AI TERMINAL -->
+                    <Button Content="🤖 Note AI Terminal" Command="{Binding NavigateToAICommand}" 
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Background="{Binding AITabBg}" Foreground="{Binding AITabFg}" 
+                            FontWeight="Bold" CornerRadius="6" Padding="12,8"/>
+
+                    <Rectangle Height="1" Fill="#45475A" Margin="0,5"/>
+
+                    <!-- 4. PENGATURAN -->
+                    <Button Content="⚙️ Pengaturan" Command="{Binding NavigateToSettingsCommand}" 
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Background="{Binding SettingsTabBg}" Foreground="{Binding SettingsTabFg}" 
+                            FontWeight="Bold" CornerRadius="6" Padding="12,8"/>
+
+                    <!-- 5. TENTANG APLIKASI (DIBAWAH SETTINGS) -->
+                    <Button Content="ℹ️ Tentang Aplikasi" Command="{Binding NavigateToAboutCommand}" 
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                            Background="{Binding AboutTabBg}" Foreground="{Binding AboutTabFg}" 
+                            FontWeight="Bold" CornerRadius="6" Padding="12,8"/>
+                </StackPanel>
+
+                <!-- Footer Status Dinamis -->
+                <TextBlock Grid.Row="2" 
+                           Text="{Binding SystemOllamaStatusText}" 
+                           Foreground="{Binding SystemOllamaStatusColor}" 
+                           FontWeight="Bold"
+                           FontSize="11" 
+                           HorizontalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- AREA KONTEN UTAMA (KANAN) -->
+        <Border Grid.Column="1" Background="#181825" Padding="10">
+            <TransitioningContentControl Content="{Binding CurrentPage}" />
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,76 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NoteAITask.ViewModels"
+             x:Class="NoteAITask.Views.NoteAIView"
+             x:DataType="vm:NoteAIViewModel">
+
+    <Grid RowDefinitions="Auto, Auto, *">
+        <!-- HEADER TOOLBAR -->
+        <Border Grid.Row="0" Background="#1E1E2E" Padding="12,10" CornerRadius="8" Margin="0,0,0,10">
+            <Grid ColumnDefinitions="*, Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <TextBlock Text="🤖 Note AI Terminal Agent" FontWeight="Bold" Foreground="White" FontSize="15"/>
+                    <TextBlock Text="|" Foreground="#45475A" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding AiStatusText}" Foreground="#89B4FA" FontSize="12" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- SELECTOR SHELL TARGET & MODE OUTPUT -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <!-- Target Shell Selector -->
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="Target Shell:" Foreground="#A6ADC8" FontSize="12" VerticalAlignment="Center"/>
+                        <ComboBox SelectedIndex="{Binding SelectedShellType}" Background="#313244" Foreground="White" CornerRadius="4" FontSize="12">
+                            <ComboBoxItem Content="⚡ Auto-Detect OS"/>
+                            <ComboBoxItem Content="🔷 Windows PowerShell"/>
+                            <ComboBoxItem Content="⬛ Windows CMD"/>
+                            <ComboBoxItem Content="🐧 Linux/macOS Bash"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Mode Output Selector -->
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="Mode Output:" Foreground="#A6ADC8" FontSize="12" VerticalAlignment="Center"/>
+                        <ComboBox SelectedIndex="{Binding SelectedOutputMode}" Background="#313244" Foreground="White" CornerRadius="4" FontSize="12">
+                            <ComboBoxItem Content="🖥️ Full Output"/>
+                            <ComboBoxItem Content="📁 Setengah Name"/>
+                            <ComboBoxItem Content="📏 Setengah Length"/>
+                        </ComboBox>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- INPUT PROMPT PANEL -->
+        <Border Grid.Row="1" Background="#1E1E2E" Padding="12" CornerRadius="8" Margin="0,0,0,10">
+            <Grid RowDefinitions="Auto, Auto">
+                <TextBox Grid.Row="0" Text="{Binding UserPrompt}" 
+                         PlaceholderText="Contoh prompt: 'Buatkan folder customer, order, dan product di direktori ini'..."
+                         AcceptsReturn="True" TextWrapping="Wrap" Height="60"
+                         Background="#313244" Foreground="White" CornerRadius="6" Margin="0,0,0,8"/>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                    <Button Content="🧹 Bersihkan Log" Command="{Binding ClearLogCommand}" Background="#313244" Foreground="White" CornerRadius="4"/>
+                    <Button Content="🚀 Jalankan AI Command" Command="{Binding ExecuteAIPromptCommand}" 
+                            IsEnabled="{Binding !IsExecuting}"
+                            Background="#A6E3A1" Foreground="#11111B" FontWeight="Bold" CornerRadius="4"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- TERMINAL LOG DISPLAY -->
+        <Border Grid.Row="2" Background="#11111B" CornerRadius="8" Padding="12">
+            <Grid RowDefinitions="Auto, *">
+                <ProgressBar Grid.Row="0" IsIndeterminate="True" IsVisible="{Binding IsExecuting}" Height="3" Margin="0,0,0,5"/>
+                <TextBlock Grid.Row="1" Text="{Binding ExecutionDurationText}" 
+                   Foreground="#FAB387" FontWeight="Bold" FontSize="11" 
+                   HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                <ScrollViewer Grid.Row="1">
+                    <SelectableTextBlock Text="{Binding TerminalLog}" 
+                                         FontFamily="Consolas, Courier New, Monospace" 
+                                         FontSize="12" Foreground="#CDD6F4" 
+                                         TextWrapping="Wrap"/>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

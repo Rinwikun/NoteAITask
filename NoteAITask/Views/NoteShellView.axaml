@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NoteAITask.ViewModels"
+             x:Class="NoteAITask.Views.NoteShellView"
+             x:DataType="vm:NoteShellViewModel">
+
+    <Grid RowDefinitions="Auto, *, Auto">
+        <!-- HEADER & FORM INPUT PERINTAH BARU -->
+        <Border Grid.Row="0" Background="#1E1E2E" Padding="12" CornerRadius="8" Margin="0,0,0,10">
+            <Grid ColumnDefinitions="*, *, Auto">
+                <TextBox Grid.Column="0" Text="{Binding InputName}" PlaceholderText="Nama Note (Contoh: Start Ollama)" Margin="0,0,8,0" Background="#313244" Foreground="White" CornerRadius="6"/>
+                <TextBox Grid.Column="1" Text="{Binding InputCommand}" PlaceholderText="Perintah Shell (Contoh: ollama serve)" Margin="0,0,8,0" Background="#313244" Foreground="White" CornerRadius="6"/>
+                <Button Grid.Column="2" Content="➕ Simpan Note" Command="{Binding AddShellNoteCommand}" Background="#89B4FA" Foreground="#11111B" FontWeight="Bold" CornerRadius="6"/>
+            </Grid>
+        </Border>
+
+        <!-- TABEL LIST QUICK COMMANDS -->
+        <Border Grid.Row="1" Background="#1E1E2E" Padding="10" CornerRadius="8">
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding ShellNotes}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="#313244" Padding="10" CornerRadius="6" Margin="0,0,0,8">
+                                <Grid ColumnDefinitions="180, *, Auto">
+                                    <TextBlock Grid.Column="0" Text="{Binding Name}" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Command}" FontFamily="Consolas, Monospace" Foreground="#A6E3A1" VerticalAlignment="Center" Margin="10,0"/>
+                                    
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                                        <Button Content="▶ Run" 
+                                                Command="{Binding $parent[UserControl].((vm:NoteShellViewModel)DataContext).RunShellCommandCommand}"
+                                                CommandParameter="{Binding}"
+                                                Background="#A6E3A1" Foreground="#11111B" FontWeight="Bold" CornerRadius="4"/>
+                                        <Button Content="🗑️" 
+                                                Command="{Binding $parent[UserControl].((vm:NoteShellViewModel)DataContext).DeleteShellNoteCommand}"
+                                                CommandParameter="{Binding}"
+                                                Background="#F38BA8" Foreground="#11111B" CornerRadius="4"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <!-- TERMINAL LOG (ASYNC EXECUTION OUTPUT) -->
+        <Border Grid.Row="2" Background="#11111B" Padding="10" CornerRadius="8" Margin="0,10,0,0" Height="180">
+            <Grid RowDefinitions="Auto, *">
+                <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,5">
+                    <TextBlock Grid.Column="0" Text="🖥️ Terminal Output Log:" FontSize="12" Foreground="#89B4FA" VerticalAlignment="Center"/>
+    
+                    <!-- DUA TOMBOL BERDAMPINGAN DENGAN FLYOUT POPUP MINI -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                        <!-- Tombol Bersihkan Log -->
+                        <Button Content="🧹 Bersihkan Log" 
+                                Command="{Binding ClearLogCommand}" 
+                                Background="#313244" Foreground="White" FontSize="11" CornerRadius="4"/>
+
+                        <!-- Tombol Info Terminal + Pop-up Mini (Flyout) -->
+                        <Button Content="ⓘ Info Terminal" 
+                                Background="#313244" Foreground="White" FontSize="11" CornerRadius="4">
+                            <Button.Flyout>
+                                <Flyout Placement="BottomEdgeAlignedRight">
+                                    <Border Background="#1E1E2E" Padding="12" CornerRadius="8" MaxWidth="320">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="💡 Informasi Output Terminal" FontWeight="Bold" Foreground="#89B4FA" FontSize="12"/>
+                                            <TextBlock Text="Jika Anda menambah shortcut perintah yang akan memiliki respon panjang seperti 'ls [Direktori tertentu]', itu bisa dijalankan di sini. Namun, tampilan akan lebih ribet karena butuh scroll ke bawah. Maka dari itu, disarankan untuk menyalin perintah tersebut ke terminal yang lebih besar." 
+                                                       TextWrapping="Wrap" Foreground="White" FontSize="11" LineHeight="16"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+                
+                <TextBox Grid.Row="1" Text="{Binding TerminalLog}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+                         FontFamily="Consolas, Monospace" FontSize="11" Background="Transparent" Foreground="#A6E3A1" BorderThickness="0"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

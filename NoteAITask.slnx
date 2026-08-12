@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="obfuscar.xml" />
+  </Folder>
+  <Project Path="NoteAITask/NoteAITask.csproj" />
+</Solution>

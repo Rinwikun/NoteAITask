@@ -1,0 +1,108 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NoteAITask.ViewModels"
+             x:Class="NoteAITask.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <Grid RowDefinitions="Auto, *">
+        <!-- HEADER PENGATURAN -->
+        <Border Grid.Row="0" Background="#1E1E2E" Padding="12,10" CornerRadius="8" Margin="0,0,0,10">
+            <TextBlock Text="⚙️ Pengaturan Aplikasi &amp; AI Engine" FontSize="16" FontWeight="Bold" Foreground="White"/>
+        </Border>
+
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Spacing="15">
+                
+                <!-- KARTU 1: DEFAULT TAMPILAN NOTE -->
+                <Border Background="#1E1E2E" Padding="15" CornerRadius="8">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="📝 Default Tampilan Note " FontWeight="Bold" Foreground="#89B4FA" FontSize="14"/>
+                        <TextBlock Text="Pilih mode tampilan awal yang langsung aktif saat membuka menu Note." Foreground="#A6ADC8" FontSize="12"/>
+
+                        <StackPanel Spacing="8" Margin="0,5,0,0">
+                            <RadioButton Content="📊 Tampilan A (Split View - 3 Kolom)" IsChecked="{Binding IsDefaultViewA}" GroupName="NoteDefaultView" Foreground="White"/>
+                            <RadioButton Content="📁 Tampilan B (Explorer View - Bertingkat)" IsChecked="{Binding IsDefaultViewB}" GroupName="NoteDefaultView" Foreground="White"/>
+                        </StackPanel>
+
+                        <!-- Actions & Save View Command -->
+                        <Border BorderBrush="#45475A" BorderThickness="0,1,0,0" Margin="0,5,0,0" Padding="0,12,0,0">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <TextBlock Grid.Column="0" Text="{Binding SaveViewMessageText}" Foreground="#A6E3A1" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <Button Grid.Column="1" Content="💾 Simpan Tampilan Default" Command="{Binding SaveViewSettingsCommand}" Background="#89B4FA" Foreground="#11111B" FontWeight="Bold" CornerRadius="4" Padding="12,6"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- KARTU 2: KONFIGURASI OLLAMA ENGINE (FUNGSI SIMPAN KHUSUS ENGINE) -->
+                <Border Background="#1E1E2E" Padding="15" CornerRadius="8">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="🤖 Konfigurasi Ollama Local AI Engine" FontWeight="Bold" Foreground="#89B4FA" FontSize="14"/>
+                        <TextBlock Text="Pengaturan endpoint server dan pilihan model AI yang terinstal." Foreground="#A6ADC8" FontSize="12"/>
+
+                        <!-- Host URL -->
+                        <Grid ColumnDefinitions="160, *">
+                            <TextBlock Grid.Column="0" Text="Ollama Host URL:" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1" Text="{Binding OllamaUrl}" Background="#313244" Foreground="White" CornerRadius="4"/>
+                        </Grid>
+
+                        <!-- Model AI Default -->
+                        <Grid ColumnDefinitions="160, *">
+                            <TextBlock Grid.Column="0" Text="Model AI Default:" Foreground="{Binding ModelLabelColor}" VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1" Text="{Binding SelectedModel}" IsEnabled="{Binding IsManualModelEnabled}" PlaceholderText="Contoh: qwen2.5:coder, llama3, dll." Background="#313244" Foreground="White" CornerRadius="4"/>
+                        </Grid>
+
+                        <!-- Auto Detect & Dropdown -->
+                        <StackPanel Margin="160,0,0,0" Spacing="8">
+                            <CheckBox Content="Gunakan AI Lokal Detect (Otomatis Deteksi Model)" IsChecked="{Binding UseAutoDetectModel}" Foreground="#A6E3A1"/>
+                            <TextBlock Text="{Binding DetectedModelStatusText}" Foreground="#89B4FA" FontWeight="Bold" FontSize="12" IsVisible="{Binding UseAutoDetectModel}"/>
+
+                            <Grid ColumnDefinitions="Auto, *" IsVisible="{Binding UseAutoDetectModel}" Margin="0,3,0,0">
+                                <TextBlock Grid.Column="0" Text="Pilih AI Terdeteksi: " Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding DetectedModels}" SelectedItem="{Binding SelectedDetectedModel}" HorizontalAlignment="Stretch" Background="#313244" Foreground="White" CornerRadius="4"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Actions & Save Engine Command -->
+                        <Border BorderBrush="#45475A" BorderThickness="0,1,0,0" Margin="0,10,0,0" Padding="0,12,0,0">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                    <Button Content="🔌 Tes Koneksi Ollama" Command="{Binding CheckConnectionCommand}" Background="#313244" Foreground="White" CornerRadius="4"/>
+                                    <TextBlock Text="{Binding ConnectionStatusText}" Foreground="{Binding ConnectionStatusColor}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="{Binding SaveEngineMessageText}" Foreground="#A6E3A1" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <Button Content="💾 Simpan Konfigurasi Engine" Command="{Binding SaveEngineSettingsCommand}" Background="#89B4FA" Foreground="#11111B" FontWeight="Bold" CornerRadius="4" Padding="12,6"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- KARTU 3: SYSTEM PROMPT TEMPLATE (FUNGSI SIMPAN KHUSUS PROMPT) -->
+                <Border Background="#1E1E2E" Padding="15" CornerRadius="8">
+                    <StackPanel Spacing="12">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <TextBlock Grid.Column="0" Text="🧠 AI Terminal System Prompt Template" FontWeight="Bold" Foreground="#FAB387" FontSize="14" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Content="🔄 Reset Default Prompt" Command="{Binding ResetDefaultPromptCommand}" Background="#313244" Foreground="White" CornerRadius="4" FontSize="11"/>
+                        </Grid>
+
+                        <TextBlock Text="Gunakan variabel {OS_DESCRIPTION}, {SHELL_NAME}, dan {TARGET_ROOT} untuk injeksi otomatis saat prompt dikirim ke Ollama." Foreground="#A6ADC8" FontSize="12" TextWrapping="Wrap"/>
+
+                        <TextBox Text="{Binding SystemPromptTemplate}" AcceptsReturn="True" TextWrapping="Wrap" Height="160" Background="#313244" Foreground="White" FontFamily="Consolas, Courier New, Monospace" FontSize="12" CornerRadius="4"/>
+
+                        <!-- Actions & Save Prompt Command -->
+                        <Border BorderBrush="#45475A" BorderThickness="0,1,0,0" Margin="0,5,0,0" Padding="0,12,0,0">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <TextBlock Grid.Column="0" Text="{Binding SavePromptMessageText}" Foreground="#A6E3A1" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <Button Grid.Column="1" Content="💾 Simpan System Prompt" Command="{Binding SavePromptSettingsCommand}" Background="#89B4FA" Foreground="#11111B" FontWeight="Bold" CornerRadius="4" Padding="12,6"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
