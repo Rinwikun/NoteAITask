@@ -65,7 +65,7 @@ Below is the status matrix of the feature development roadmap for **NoteAI Task 
 ---
 ## Image and Video assets are sourced from the official
 <details>
-  <summary>Click to view the image</summary>
+  <summary>🖼️ Click to view the image</summary>
 
   ### image 1
   ![Note](https://github.com/Rinwikun/NoteAITask/blob/main/NoteAITask/Assets/images/note.png)
