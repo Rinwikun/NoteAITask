@@ -106,18 +106,23 @@ Below is the status matrix of the feature development roadmap for **NoteAI Task 
    ```bash
    ollama pull qwen2.5-coder:7b
    ```
-### Running Locally
-	'''bash
-	# Clone this repository
-	git clone https://github.com/Rinwikun/NoteAITask.git
+### Install NoteAITask on **Windows**
 
-	# Navigate to project folder
-	cd NoteAITask
+```powershell
+# Quick Install using PowerShell (irm)
+irm https://raw.githubusercontent.com/Rinwikun/NoteAITask/main/install.ps1 | iex
 
-	# Run application
-	dotnet run
-	'''
+# Manual Installation
+# Download the latest NoteAITask-Windows-x64.exe binary directly from GitHub Releases:
+# https://github.com/Rinwikun/NoteAITask/releases
+```
+### Install NoteAITask in **Linux/MacOS**
+    ```bash
+    # Install using One-Liner Shell Script (curl)
+    curl -fsSL https://raw.githubusercontent.com/Rinwikun/NoteAITask/main/install.sh | sh
 
+    # Run Application
+    noteaitask
 ---
 
 ### 🔒 Security & Protection Architecture
