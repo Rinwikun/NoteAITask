@@ -8,7 +8,7 @@
 [![NET Target](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![AvaloniaUI](https://img.shields.io/badge/UI-AvaloniaUI-purple?logo=avalonia)](https://avaloniaui.net/)
 [![Ollama](https://img.shields.io/badge/AI%20Engine-Ollama-black?logo=ollama&logoColor=white)](https://ollama.com/)
-[![Release Stage](https://img.shields.io/badge/Release-v1.0.0--beta-brightgreen)]()
+[![Release Stage](https://img.shields.io/badge/Release-v3.2.2--beta-brightgreen)]()
 
 > ⚠️ **Language Notice:** Currently, this application interface and logging output are exclusively in **Indonesian (Bahasa Indonesia)**. Multi-language (i18n / English) support is planned for future updates.
 
