@@ -47,7 +47,7 @@ Below is the status matrix of the feature development roadmap for **NoteAI Task 
 
 | 🤖 AI Terminal Agent Demo | 📝 Note Dual-View Explorer |
 | :---: | :---: |
-| ![AI Agent Demo](https://github.com/user-attachments/assets/e0830efe-49d3-4cdb-9f49-25aa34add25e) | ![Dual View Demo](https://github.com/user-attachments/assets/5c3ecd4c-848d-4b70-b176-048dfb5ce7e9) |
+| <video src="https://github.com/user-attachments/assets/e0830efe-49d3-4cdb-9f49-25aa34add25e" controls="controls" style="max-width: 100%; max-height: 300px;">AI Agent Demo</video> | <video src="https://github.com/user-attachments/assets/5c3ecd4c-848d-4b70-b176-048dfb5ce7e9" controls="controls" style="max-width: 100%; max-height: 300px;">Dual View Demo</video> |
 
 ---
 
@@ -77,18 +77,22 @@ Below is the status matrix of the feature development roadmap for **NoteAI Task 
   ![Note AI Terminal](https://github.com/Rinwikun/NoteAITask/blob/main/NoteAITask/Assets/images/note-ai-terminal.png)	
 </details>
 <details>
-  <summary>Click to view the video</summary>
+  <summary>🎬 Click to view application video demos</summary>
 
-  ### video 1
-  ![Note](https://github.com/user-attachments/assets/5c3ecd4c-848d-4b70-b176-048dfb5ce7e9)
+  <br />
 
-  ### video 2
-  ![Note Terminal](https://github.com/user-attachments/assets/0df8055c-4d47-43ae-8535-d8ab4af3e8bb)
+  ### 📝 Demo Note
+  <video src="https://github.com/user-attachments/assets/5c3ecd4c-848d-4b70-b176-048dfb5ce7e9" controls="controls" style="max-width: 100%;">
+  </video>
 
-  ### video 3
-  ![Note AI Terminal](https://github.com/user-attachments/assets/e0830efe-49d3-4cdb-9f49-25aa34add25e)	
+  ### 💻 Demo Note Terminal 
+  <video src="https://github.com/user-attachments/assets/0df8055c-4d47-43ae-8535-d8ab4af3e8bb" controls="controls" style="max-width: 100%;">
+  </video>
+
+  ### 🤖 Demo Note AI Terminal
+  <video src="https://github.com/user-attachments/assets/e0830efe-49d3-4cdb-9f49-25aa34add25e" controls="controls" style="max-width: 100%;">
+  </video>
 </details>
-
 ---
 
 ## 🚀 How to Run the Project
