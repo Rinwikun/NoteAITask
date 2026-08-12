@@ -1,0 +1,142 @@
+name: Build & Publish Multi-Platform Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Memicu workflow hanya pada tag versi (contoh: v3.2.2-beta, v1.0.0)
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build & Obfuscate (${{ matrix.os }})
+    runs-on: ${{ matrix.image }}
+    strategy:
+      matrix:
+        include:
+          - os: windows
+            image: windows-latest
+            rid: win-x64
+            artifact_name: NoteAITask-Windows-x64.exe
+            exec_name: NoteAITask.exe
+          - os: linux
+            image: ubuntu-latest
+            rid: linux-x64
+            artifact_name: NoteAITask-Linux-x64
+            exec_name: NoteAITask
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # Caching NuGet Packages untuk mempercepat proses restore & build
+      - name: Cache NuGet Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Install & Verify Obfuscar Tool
+        shell: pwsh
+        run: |
+          dotnet tool install --global Obfuscar.GlobalTool
+
+          $cmd = Get-Command obfuscar.console -ErrorAction SilentlyContinue
+
+          if (-not $cmd) {
+            Write-Host "⚠️ obfuscar.console belum terdeteksi di PATH. Menambahkan folder .dotnet/tools..."
+            if ($IsWindows) {
+              $tools = Join-Path $env:USERPROFILE '.dotnet\tools'
+            } else {
+              $tools = "$env:HOME/.dotnet/tools"
+            }
+            $tools | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          } else {
+            Write-Host "✅ obfuscar.console sudah siap digunakan di PATH."
+          }
+
+      - name: Step 1 - Build Loose Assemblies
+        run: dotnet publish NoteAITask/NoteAITask.csproj -c Release -r ${{ matrix.rid }} --self-contained true /p:PublishSingleFile=false /p:PublishReadyToRun=false
+
+      - name: Step 2 & 3 - Run Obfuscar & Replace Assembly
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE "NoteAITask/bin/Release/net10.0/${{ matrix.rid }}/publish"
+          
+          # Defensive Check 1: Pastikan folder publish benar-benar terbentuk
+          if (-not (Test-Path $publishDir)) {
+            Write-Error "❌ Error: Publish directory not found at $publishDir"
+            exit 1
+          }
+
+          # Resolve path obfuscar.xml
+          $obfuscarXml = "obfuscar.xml"
+          if (-not (Test-Path (Join-Path $env:GITHUB_WORKSPACE $obfuscarXml))) {
+            $obfuscarXml = "NoteAITask/obfuscar.xml"
+          }
+          $obfuscarPath = Join-Path $env:GITHUB_WORKSPACE $obfuscarXml
+
+          # Defensive Check 2: Pastikan file obfuscar.xml ditemukan
+          if (-not (Test-Path $obfuscarPath)) {
+            Write-Error "❌ Error: obfuscar.xml configuration file not found at $obfuscarPath"
+            exit 1
+          }
+
+          Write-Host "📂 Target Publish Dir: $publishDir"
+          Write-Host "📜 Using Obfuscar Config: $obfuscarPath"
+
+          Set-Location $publishDir
+
+          # Debugging: List isi direktori sebelum obfuskasi
+          Write-Host "🔍 Listing files before obfuscation:"
+          Get-ChildItem -Name
+
+          # Eksekusi Obfuscation
+          obfuscar.console $obfuscarPath
+
+          if (Test-Path "./protected/NoteAITask.dll") {
+            Copy-Item -Path "./protected/NoteAITask.dll" -Destination "./NoteAITask.dll" -Force
+            Remove-Item -Path "./protected" -Recurse -Force
+            Write-Host "✅ Assembly replaced with obfuscated version successfully."
+          } else {
+            Write-Error "❌ Error: protected/NoteAITask.dll not found after obfuscation execution."
+            exit 1
+          }
+
+      - name: Step 4 - Final Single-File Bundle
+        run: dotnet publish NoteAITask/NoteAITask.csproj -c Release -r ${{ matrix.rid }} --self-contained true /p:PublishSingleFile=true /p:PublishReadyToRun=false --no-restore
+
+      - name: Rename Output Binary
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE "NoteAITask/bin/Release/net10.0/${{ matrix.rid }}/publish"
+          $src = Join-Path $publishDir '${{ matrix.exec_name }}'
+          $dst = Join-Path $publishDir '${{ matrix.artifact_name }}'
+          
+          if (-not (Test-Path $src)) {
+            Write-Error "❌ Error: Binary source $src not found for renaming."
+            exit 1
+          }
+
+          Move-Item -Path $src -Destination $dst -Force
+          Write-Host "🚀 Renamed $src -> $dst"
+
+      - name: Make Linux artifact executable
+        if: runner.os == 'Linux'
+        run: chmod +x NoteAITask/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.artifact_name }}
+
+      - name: Upload Artifact to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: NoteAITask/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.artifact_name }}
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
