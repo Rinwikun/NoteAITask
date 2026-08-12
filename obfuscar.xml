@@ -1,14 +1,21 @@
-﻿<?xml version='1.0'?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Obfuscator>
-	<Var name="InPath" value=".\bin\Release\net10.0\win-x64\publish" />
-	<Var name="OutPath" value=".\bin\Release\net10.0\win-x64\publish\protected" />
-	<Var name="KeepPublicApi" value="true" />
-	<Var name="HidePrivateApi" value="true" />
-	<Var name="RenameProperties" value="true" />
-	<Var name="RenameEvents" value="true" />
-	<Var name="RenameFields" value="true" />
-	<Var name="UseUnicodeNames" value="true" />
-	<Var name="Optimize" value="true" />
+  <Var name="InPath" value="." />
+  <Var name="OutPath" value=".\protected" />
+  <Var name="Path" value="." />
 
-	<Module file="$(InPath)\NoteAITask.dll" />
+  <!-- Matikan HideStrings untuk mencegah NullReferenceException pada Avalonia XAML -->
+  <Var name="HideStrings" value="false" />
+
+  <!-- Kebijakan Proteksi Simbol -->
+  <Var name="KeepPublicApi" value="true" />
+  <Var name="HidePrivateApi" value="true" />
+  <Var name="RenameProperties" value="false" />
+  <Var name="RenameEvents" value="false" />
+  <Var name="RenameFields" value="true" />
+  <Var name="UseUnicodeNames" value="false" />
+  <Var name="ReuseNames" value="true" />
+  <Var name="Optimize" value="true" />
+
+  <Module file="$(InPath)\NoteAITask.dll" />
 </Obfuscator>

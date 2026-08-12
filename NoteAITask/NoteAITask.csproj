@@ -63,7 +63,4 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-	<Target Name="Obfuscate" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release'">
-		<Exec Command="dotnet tool run obfuscar.console obfuscar.xml" ContinueOnError="true" />
-	</Target>
 </Project>
