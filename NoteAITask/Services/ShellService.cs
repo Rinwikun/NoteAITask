@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace NoteAITask.Services;
@@ -20,10 +21,29 @@ public class ShellService
             var result = new ShellExecutionResult();
             try
             {
+                bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+                // Escape double quotes to prevent string injection/breaking shell arguments
+                string escapedCommand = command.Replace("\"", "\\\"");
+
+                string fileName;
+                string arguments;
+
+                if (isWindows)
+                {
+                    fileName = "powershell.exe";
+                    arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{escapedCommand}\"";
+                }
+                else
+                {
+                    fileName = "/bin/bash";
+                    arguments = $"-c \"{escapedCommand}\"";
+                }
+
                 var processInfo = new ProcessStartInfo
                 {
-                    FileName = "powershell.exe", // Otomatis fallback ke powershell di Windows
-                    Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{command}\"",
+                    FileName = fileName,
+                    Arguments = arguments,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
