@@ -3,7 +3,7 @@ set -e
 
 REPO="Rinwikun/NoteAITask"
 INSTALL_DIR="/usr/local/bin"
-BINARY_NAME="NoteAITask"
+BINARY_NAME="NoteAITask-Linux-x64"
 APP_NAME="noteaitask"
 
 echo -e "\e[36m🚀 Installing NoteAI Task Terminal for Linux...\e[0m"
