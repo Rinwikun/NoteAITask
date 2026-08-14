@@ -1,0 +1,69 @@
+$winYml = @'
+name: Release Windows
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows Executable
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install Obfuscar Global Tool
+        run: dotnet tool install --global Obfuscar.GlobalTool
+
+      - name: Step 1 - Build Loose Assemblies
+        run: dotnet publish NoteAITask/NoteAITask.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=false /p:PublishReadyToRun=false
+
+      - name: Step 2 & 3 - Run Obfuscar & Replace Assembly
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE "NoteAITask/bin/Release/net10.0/win-x64/publish"
+          $obfuscarXml = "obfuscar.xml"
+          if (-not (Test-Path (Join-Path $env:GITHUB_WORKSPACE $obfuscarXml))) {
+            $obfuscarXml = "NoteAITask/obfuscar.xml"
+          }
+          $obfuscarPath = Join-Path $env:GITHUB_WORKSPACE $obfuscarXml
+
+          Set-Location $publishDir
+          obfuscar.console $obfuscarPath
+
+          if (Test-Path "./protected/NoteAITask.dll") {
+            Copy-Item -Path "./protected/NoteAITask.dll" -Destination "./NoteAITask.dll" -Force
+            Remove-Item -Path "./protected" -Recurse -Force
+            Write-Host "✅ Obfuscated Windows assembly applied."
+          }
+
+      - name: Step 4 - Final Single-File Bundle
+        run: dotnet publish NoteAITask/NoteAITask.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:PublishReadyToRun=false --no-restore
+
+      - name: Rename Output Binary
+        shell: pwsh
+        run: |
+          $publishDir = Join-Path $env:GITHUB_WORKSPACE "NoteAITask/bin/Release/net10.0/win-x64/publish"
+          Move-Item -Path "$publishDir/NoteAITask.exe" -Destination "$publishDir/NoteAITask-Windows-x64.exe" -Force
+
+      - name: Upload Windows Binary to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: NoteAITask/bin/Release/net10.0/win-x64/publish/NoteAITask-Windows-x64.exe
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+'@
+
+Set-Content -Path .github/workflows/release-windows.yml -Value $winYml -Encoding UTF8

@@ -1,0 +1,72 @@
+$linuxYml = @'
+name: Release Linux
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    name: Build Linux Binary
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install Obfuscar Global Tool
+        run: dotnet tool install --global Obfuscar.GlobalTool
+
+      - name: Add .NET Tools to PATH
+        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Step 1 - Build Loose Assemblies
+        run: dotnet publish NoteAITask/NoteAITask.csproj -c Release -r linux-x64 --self-contained true /p:PublishSingleFile=false /p:PublishReadyToRun=false
+
+      - name: Step 2 & 3 - Run Obfuscar & Replace Assembly
+        run: |
+          PUBLISH_DIR="$GITHUB_WORKSPACE/NoteAITask/bin/Release/net10.0/linux-x64/publish"
+          OBFUSCAR_XML="$GITHUB_WORKSPACE/obfuscar.xml"
+          if [ ! -f "$OBFUSCAR_XML" ]; then
+            OBFUSCAR_XML="$GITHUB_WORKSPACE/NoteAITask/obfuscar.xml"
+          fi
+
+          cd "$PUBLISH_DIR"
+          $HOME/.dotnet/tools/obfuscar.console "$OBFUSCAR_XML"
+
+          if [ -f "./protected/NoteAITask.dll" ]; then
+            cp -f ./protected/NoteAITask.dll ./NoteAITask.dll
+            rm -rf ./protected
+            echo "✅ Obfuscated Linux assembly applied."
+          fi
+
+      - name: Step 4 - Final Single-File Bundle
+        run: dotnet publish NoteAITask/NoteAITask.csproj -c Release -r linux-x64 --self-contained true /p:PublishSingleFile=true /p:PublishReadyToRun=false --no-restore
+
+      - name: Rename Output Binary
+        run: |
+          PUBLISH_DIR="$GITHUB_WORKSPACE/NoteAITask/bin/Release/net10.0/linux-x64/publish"
+          mv "$PUBLISH_DIR/NoteAITask" "$PUBLISH_DIR/NoteAITask-Linux-x64"
+
+      - name: Make Linux Binary Executable
+        run: chmod +x NoteAITask/bin/Release/net10.0/linux-x64/publish/NoteAITask-Linux-x64
+
+      - name: Upload Linux Binary to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: NoteAITask/bin/Release/net10.0/linux-x64/publish/NoteAITask-Linux-x64
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+'@
+
+Set-Content -Path .github/workflows/release-linux.yml -Value $linuxYml -Encoding UTF8
