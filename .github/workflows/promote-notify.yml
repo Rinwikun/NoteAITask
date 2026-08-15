@@ -1,0 +1,30 @@
+name: Release Promotion Notify
+
+# Fires HANYA saat pre-release yang sudah ada di-edit manual dan status
+# prerelease-nya dilepas (jadi full release), atau saat full release
+# dipublish langsung. Ini aman dari masalah rekursi GITHUB_TOKEN karena
+# aksi promosi dilakukan manual oleh akun asli kamu di GitHub UI, bukan
+# oleh pipeline release.yml.
+on:
+  release:
+    types: [released]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord Notification
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          status: success
+          title: "🚀 Release Promoted to Stable"
+          description: |
+            **Version:** ${{ github.event.release.tag_name }}
+            **Released:** ${{ github.event.release.published_at }}
+            **By:** ${{ github.event.sender.login }}
+
+            This release is now marked as the official stable release.

@@ -1,0 +1,170 @@
+name: Release macOS (Manual)
+
+# Manual-trigger, bukan bagian dari pipeline otomatis release.yml.
+# Alasan: belum ada demand nyata untuk macOS, dan macOS runner GitHub
+# Actions memakan 10x quota menit dibanding Linux runner. Jalankan ini
+# via tab Actions -> Release macOS (Manual) -> Run workflow, isi tag
+# release yang sudah ada (mis. v3.2.22-beta), kapanpun demand muncul.
+#
+# CATATAN PENTING: binary ini TIDAK di-code-sign dan TIDAK dinotarize
+# (butuh Apple Developer Program $99/tahun). Tanpa itu, macOS Gatekeeper
+# akan BLOKIR eksekusi (bukan sekadar warning). User harus jalankan:
+#   xattr -cr ./NoteAITask-macOS-<arch>
+# sebelum bisa membuka aplikasinya. Cantumkan instruksi ini di release
+# notes kalau asset macOS ini dipakai publik.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag release yang sudah ada untuk dilampiri binary macOS (mis. v3.2.22-beta)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  PROJECT_PATH: 'NoteAITask/NoteAITask.csproj'
+  BUILD_CONFIG: 'Release'
+  MIN_SIZE_MB: 10
+
+jobs:
+  build-macos:
+    name: Build macOS (${{ matrix.arch_label }})
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        include:
+          - runtime: osx-x64
+            arch_label: Intel
+            artifact_name: NoteAITask-macOS-x64
+          - runtime: osx-arm64
+            arch_label: Apple Silicon
+            artifact_name: NoteAITask-macOS-arm64
+
+    steps:
+      - name: Checkout Repository at Tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install Obfuscar Global Tool
+        run: dotnet tool install --global Obfuscar.GlobalTool
+
+      - name: Add .NET Tools to PATH
+        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Step 1 - Build Loose Assemblies
+        run: dotnet publish "${{ env.PROJECT_PATH }}" -c ${{ env.BUILD_CONFIG }} -r ${{ matrix.runtime }} --self-contained true /p:PublishSingleFile=false /p:PublishReadyToRun=false
+
+      - name: Step 2 - Run Obfuscar (macOS)
+        continue-on-error: true
+        run: |
+          PUBLISH_DIR="NoteAITask/bin/${{ env.BUILD_CONFIG }}/net10.0/${{ matrix.runtime }}/publish"
+          OBFUSCAR_XML="NoteAITask/obfuscar.xml"
+
+          if [ ! -d "$PUBLISH_DIR" ]; then
+            echo "⚠️ Publish directory not found, skipping obfuscation"
+            exit 0
+          fi
+
+          if [ ! -f "$OBFUSCAR_XML" ]; then
+            echo "⚠️ obfuscar.xml not found, skipping obfuscation"
+            exit 0
+          fi
+
+          cd "$PUBLISH_DIR"
+          echo "Running Obfuscar from: $(pwd)"
+
+          # NOTE: sama seperti Linux, obfuscar.console adalah .NET global
+          # tool -> perilakunya identik lintas OS, cuma path resolusi PATH
+          # yang perlu $HOME/.dotnet/tools (sudah ditangani step di atas).
+          $HOME/.dotnet/tools/obfuscar.console "$(pwd -P)/../../../../../$OBFUSCAR_XML" || echo "⚠️ Obfuscar failed, continuing without obfuscation"
+
+          if [ -f "./protected/NoteAITask.dll" ]; then
+            cp -f ./protected/NoteAITask.dll ./NoteAITask.dll
+            rm -rf ./protected
+            echo "✅ Obfuscated assembly applied."
+          fi
+
+      - name: Step 3 - Final Single-File Bundle
+        run: dotnet publish "${{ env.PROJECT_PATH }}" -c ${{ env.BUILD_CONFIG }} -r ${{ matrix.runtime }} --self-contained true /p:PublishSingleFile=true /p:PublishReadyToRun=false --no-restore
+
+      - name: Verify Build Output
+        run: |
+          BINARY_PATH="NoteAITask/bin/${{ env.BUILD_CONFIG }}/net10.0/${{ matrix.runtime }}/publish/NoteAITask"
+
+          if [ ! -f "$BINARY_PATH" ]; then
+            echo "❌ Build failed: Binary not found at $BINARY_PATH"
+            exit 1
+          fi
+
+          # NOTE PERBEDAAN vs Linux: `du -h` sama-sama ada di BSD userland
+          # macOS, jadi step ini tetap portable. Perbedaan baru muncul di
+          # step "Capture & Verify Artifact Info" di bawah.
+          FILE_SIZE=$(du -h "$BINARY_PATH" | cut -f1)
+          echo "✅ Build successful. File size: $FILE_SIZE"
+
+      - name: Rename Output Binary
+        run: |
+          BINARY_PATH="NoteAITask/bin/${{ env.BUILD_CONFIG }}/net10.0/${{ matrix.runtime }}/publish/NoteAITask"
+          PUBLISH_DIR="NoteAITask/bin/${{ env.BUILD_CONFIG }}/net10.0/${{ matrix.runtime }}/publish"
+          RENAMED_PATH="$PUBLISH_DIR/${{ matrix.artifact_name }}"
+
+          if [ ! -f "$BINARY_PATH" ]; then
+            echo "❌ Binary not found: $BINARY_PATH"
+            exit 1
+          fi
+
+          mv "$BINARY_PATH" "$RENAMED_PATH"
+          echo "✅ Renamed to: $(basename $RENAMED_PATH)"
+
+      - name: Make macOS Binary Executable
+        run: |
+          BINARY_PATH="NoteAITask/bin/${{ env.BUILD_CONFIG }}/net10.0/${{ matrix.runtime }}/publish/${{ matrix.artifact_name }}"
+          chmod +x "$BINARY_PATH"
+          echo "✅ Binary is executable"
+
+      - name: Capture & Verify Artifact Info
+        id: file-info
+        run: |
+          BINARY_PATH="NoteAITask/bin/${{ env.BUILD_CONFIG }}/net10.0/${{ matrix.runtime }}/publish/${{ matrix.artifact_name }}"
+
+          # PERBEDAAN KUNCI vs Linux: BSD `stat` (bawaan macOS) pakai flag
+          # -f dengan format string berbeda dari GNU `stat` (-c) di Linux.
+          # `stat -c%s` (Linux) akan ERROR di macOS -- ini contoh konkret
+          # "mirip tapi beda" yang kamu maksud.
+          SIZE_BYTES=$(stat -f%z "$BINARY_PATH")
+          SIZE_MB=$(echo "scale=2; $SIZE_BYTES / 1048576" | bc)
+
+          echo "ASSET_NAME=${{ matrix.artifact_name }}" >> "$GITHUB_OUTPUT"
+          echo "SIZE_MB=$SIZE_MB" >> "$GITHUB_OUTPUT"
+
+          if (( $(echo "$SIZE_MB < ${{ env.MIN_SIZE_MB }}" | bc -l) )); then
+            echo "❌ Ukuran binary ${SIZE_MB}MB di bawah ambang minimum ${{ env.MIN_SIZE_MB }}MB - kemungkinan build corrupt"
+            exit 1
+          fi
+          echo "✅ Artifact size OK: ${SIZE_MB}MB"
+
+      - name: Upload macOS Binary to Existing Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          files: NoteAITask/bin/${{ env.BUILD_CONFIG }}/net10.0/${{ matrix.runtime }}/publish/${{ matrix.artifact_name }}
+          # Tidak set `prerelease`/`draft` di sini -> softprops akan
+          # append asset ke release yang sudah ada tanpa mengubah status
+          # prerelease yang sudah ditentukan oleh release.yml sebelumnya.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Unsigned Binary Reminder
+        run: |
+          echo "⚠️ Binary macOS ini UNSIGNED. Tambahkan catatan di release notes:"
+          echo "   Sebelum menjalankan: xattr -cr ./${{ matrix.artifact_name }}"
