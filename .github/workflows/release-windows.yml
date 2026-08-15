@@ -8,6 +8,13 @@ on:
 permissions:
   contents: write
 
+env:
+  DOTNET_VERSION: '10.0.x'
+  PROJECT_PATH: 'NoteAITask/NoteAITask.csproj'
+  BUILD_CONFIG: 'Release'
+  RUNTIME: 'win-x64'
+  ARTIFACT_NAME: 'NoteAITask-Windows-x64'
+
 jobs:
   build-windows:
     name: Build Windows Executable
@@ -17,49 +24,113 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET SDK 10
+      - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Install Obfuscar Global Tool
         run: dotnet tool install --global Obfuscar.GlobalTool
+        continue-on-error: false
+
+      - name: Find Publish Directory
+        id: find-dirs
+        shell: pwsh
+        run: |
+          $projectDir = Split-Path "${{ env.PROJECT_PATH }}" -Parent
+          $publishDir = Get-ChildItem -Path "$projectDir/bin/${{ env.BUILD_CONFIG }}" -Directory -Filter "*${{ env.RUNTIME }}*" | Select-Object -First 1
+          
+          if (-not $publishDir) {
+            Write-Host "❌ Publish directory not found!"
+            exit 1
+          }
+          
+          $publishPath = Join-Path $publishDir.FullName "publish"
+          echo "PUBLISH_DIR=$publishPath" >> $env:GITHUB_OUTPUT
+          Write-Host "✅ Found publish dir: $publishPath"
 
       - name: Step 1 - Build Loose Assemblies
-        run: dotnet publish NoteAITask/NoteAITask.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=false /p:PublishReadyToRun=false
+        run: dotnet publish "${{ env.PROJECT_PATH }}" -c ${{ env.BUILD_CONFIG }} -r ${{ env.RUNTIME }} --self-contained true /p:PublishSingleFile=false /p:PublishReadyToRun=false
 
       - name: Step 2 & 3 - Run Obfuscar & Replace Assembly
         shell: pwsh
         run: |
-          $publishDir = Join-Path $env:GITHUB_WORKSPACE "NoteAITask/bin/Release/net10.0/win-x64/publish"
+          $publishDir = "${{ steps.find-dirs.outputs.PUBLISH_DIR }}"
           $obfuscarXml = "obfuscar.xml"
-          if (-not (Test-Path (Join-Path $env:GITHUB_WORKSPACE $obfuscarXml))) {
-            $obfuscarXml = "NoteAITask/obfuscar.xml"
+          $obfuscarPath = if (Test-Path $obfuscarXml) {
+            (Resolve-Path $obfuscarXml).Path
+          } else {
+            (Resolve-Path "NoteAITask/obfuscar.xml").Path
           }
-          $obfuscarPath = Join-Path $env:GITHUB_WORKSPACE $obfuscarXml
 
-          Set-Location $publishDir
+          if (-not (Test-Path $obfuscarPath)) {
+            Write-Host "❌ obfuscar.xml not found at: $obfuscarPath"
+            exit 1
+          }
+
+          Push-Location $publishDir
+          Write-Host "Running Obfuscar from: $(Get-Location)"
+          Write-Host "Config file: $obfuscarPath"
+          
           obfuscar.console $obfuscarPath
+          $obfuscationResult = $LASTEXITCODE
+          
+          if ($obfuscationResult -ne 0) {
+            Write-Host "❌ Obfuscar failed with exit code: $obfuscationResult"
+            Pop-Location
+            exit 1
+          }
 
           if (Test-Path "./protected/NoteAITask.dll") {
             Copy-Item -Path "./protected/NoteAITask.dll" -Destination "./NoteAITask.dll" -Force
             Remove-Item -Path "./protected" -Recurse -Force
             Write-Host "✅ Obfuscated Windows assembly applied."
+          } else {
+            Write-Host "❌ Protected DLL not found after obfuscation!"
+            Pop-Location
+            exit 1
           }
+          
+          Pop-Location
 
       - name: Step 4 - Final Single-File Bundle
-        run: dotnet publish NoteAITask/NoteAITask.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:PublishReadyToRun=false --no-restore
+        run: dotnet publish "${{ env.PROJECT_PATH }}" -c ${{ env.BUILD_CONFIG }} -r ${{ env.RUNTIME }} --self-contained true /p:PublishSingleFile=true /p:PublishReadyToRun=false --no-restore
+
+      - name: Verify Build Output
+        shell: pwsh
+        run: |
+          $exePath = Join-Path "${{ steps.find-dirs.outputs.PUBLISH_DIR }}" "NoteAITask.exe"
+          if (-not (Test-Path $exePath)) {
+            Write-Host "❌ Build failed: NoteAITask.exe not found at $exePath"
+            exit 1
+          }
+          $fileSize = (Get-Item $exePath).Length / 1MB
+          Write-Host "✅ Build successful. File size: $([Math]::Round($fileSize, 2)) MB"
 
       - name: Rename Output Binary
         shell: pwsh
         run: |
-          $publishDir = Join-Path $env:GITHUB_WORKSPACE "NoteAITask/bin/Release/net10.0/win-x64/publish"
-          Move-Item -Path "$publishDir/NoteAITask.exe" -Destination "$publishDir/NoteAITask-Windows-x64.exe" -Force
+          $publishDir = "${{ steps.find-dirs.outputs.PUBLISH_DIR }}"
+          $exePath = Join-Path $publishDir "NoteAITask.exe"
+          $renamedPath = Join-Path $publishDir "${{ env.ARTIFACT_NAME }}.exe"
+          
+          if (-not (Test-Path $exePath)) {
+            Write-Host "❌ Executable not found: $exePath"
+            exit 1
+          }
+          
+          Move-Item -Path $exePath -Destination $renamedPath -Force
+          Write-Host "✅ Renamed to: $(Split-Path $renamedPath -Leaf)"
 
       - name: Upload Windows Binary to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: NoteAITask/bin/Release/net10.0/win-x64/publish/NoteAITask-Windows-x64.exe
+          files: ${{ steps.find-dirs.outputs.PUBLISH_DIR }}/${{ env.ARTIFACT_NAME }}.exe
           prerelease: true
+          draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Failed Notification
+        if: failure()
+        run: Write-Host "❌ Build workflow failed. Check logs above for details."
