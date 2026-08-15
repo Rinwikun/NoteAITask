@@ -2,55 +2,81 @@ name: Verify Release
 
 on:
   release:
-    types: [published]
+    # `released`   -> full release dipublish LANGSUNG, ATAU pre-release yang
+    #                 di-edit lalu diubah menjadi release (uncheck "This is
+    #                 a pre-release"). Ini yang menjawab kebutuhan kamu:
+    #                 promosi manual pre-release -> release AKAN re-trigger.
+    # `prereleased` -> pre-release dipublish langsung.
+    #                 Catatan: tidak fire kalau pre-release berasal dari
+    #                 draft yang dipublish belakangan (edge case, GitHub
+    #                 hanya kirim `published` untuk kasus itu).
+    types: [released, prereleased]
+
+# Cegah run yang saling tumpang tindih untuk release/tag yang sama
+# (mis. edit berkali-kali dalam waktu singkat).
+concurrency:
+  group: verify-release-${{ github.event.release.id }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   verify-release:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Determine Release Type
+        id: release-type
+        run: |
+          if [ "${{ github.event.release.prerelease }}" = "true" ]; then
+            echo "LABEL=Pre-Release" >> "$GITHUB_OUTPUT"
+            echo "EMOJI=🧪" >> "$GITHUB_OUTPUT"
+          else
+            echo "LABEL=Release" >> "$GITHUB_OUTPUT"
+            echo "EMOJI=🚀" >> "$GITHUB_OUTPUT"
+          fi
+          echo "ACTION=${{ github.event.action }}" >> "$GITHUB_OUTPUT"
 
       - name: Get Commit Info
         id: commit-info
         run: |
           TAG_NAME="${{ github.event.release.tag_name }}"
-          COMMIT_SHA=$(git rev-list -n 1 $TAG_NAME 2>/dev/null || echo "unknown")
-          COMMIT_SHORT=$(echo $COMMIT_SHA | cut -c1-7)
-          COMMIT_MESSAGE=$(git log -1 --pretty=%B $COMMIT_SHA 2>/dev/null || echo "N/A")
-          COMMIT_AUTHOR=$(git log -1 --pretty=%an $COMMIT_SHA 2>/dev/null || echo "N/A")
-          
-          echo "COMMIT_SHA=$COMMIT_SHA" >> $GITHUB_OUTPUT
-          echo "COMMIT_SHORT=$COMMIT_SHORT" >> $GITHUB_OUTPUT
-          echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> $GITHUB_OUTPUT
-          echo "COMMIT_AUTHOR=$COMMIT_AUTHOR" >> $GITHUB_OUTPUT
+          COMMIT_SHA=$(git rev-list -n 1 "$TAG_NAME" 2>/dev/null || echo "unknown")
+          COMMIT_SHORT=$(echo "$COMMIT_SHA" | cut -c1-7)
+          COMMIT_MESSAGE=$(git log -1 --pretty=%B "$COMMIT_SHA" 2>/dev/null || echo "N/A")
+          COMMIT_AUTHOR=$(git log -1 --pretty=%an "$COMMIT_SHA" 2>/dev/null || echo "N/A")
+
+          echo "COMMIT_SHA=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
+          echo "COMMIT_SHORT=$COMMIT_SHORT" >> "$GITHUB_OUTPUT"
+          echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> "$GITHUB_OUTPUT"
+          echo "COMMIT_AUTHOR=$COMMIT_AUTHOR" >> "$GITHUB_OUTPUT"
 
       - name: Parse Release Assets
         id: assets
         run: |
-          # Get from GitHub release event
           ASSETS='${{ toJson(github.event.release.assets) }}'
-          
+
           WIN_ASSET=$(echo "$ASSETS" | jq -r '.[] | select(.name | contains("Windows")) | .name' | head -1)
           WIN_SIZE=$(echo "$ASSETS" | jq -r '.[] | select(.name | contains("Windows")) | .size' | head -1)
           WIN_URL=$(echo "$ASSETS" | jq -r '.[] | select(.name | contains("Windows")) | .browser_download_url' | head -1)
-          
+
           LINUX_ASSET=$(echo "$ASSETS" | jq -r '.[] | select(.name | contains("Linux")) | .name' | head -1)
           LINUX_SIZE=$(echo "$ASSETS" | jq -r '.[] | select(.name | contains("Linux")) | .size' | head -1)
           LINUX_URL=$(echo "$ASSETS" | jq -r '.[] | select(.name | contains("Linux")) | .browser_download_url' | head -1)
-          
-          echo "WIN_ASSET=$WIN_ASSET" >> $GITHUB_OUTPUT
-          echo "WIN_SIZE=$WIN_SIZE" >> $GITHUB_OUTPUT
-          echo "WIN_URL=$WIN_URL" >> $GITHUB_OUTPUT
-          
-          echo "LINUX_ASSET=$LINUX_ASSET" >> $GITHUB_OUTPUT
-          echo "LINUX_SIZE=$LINUX_SIZE" >> $GITHUB_OUTPUT
-          echo "LINUX_URL=$LINUX_URL" >> $GITHUB_OUTPUT
-          
+
+          echo "WIN_ASSET=$WIN_ASSET" >> "$GITHUB_OUTPUT"
+          echo "WIN_SIZE=$WIN_SIZE" >> "$GITHUB_OUTPUT"
+          echo "WIN_URL=$WIN_URL" >> "$GITHUB_OUTPUT"
+
+          echo "LINUX_ASSET=$LINUX_ASSET" >> "$GITHUB_OUTPUT"
+          echo "LINUX_SIZE=$LINUX_SIZE" >> "$GITHUB_OUTPUT"
+          echo "LINUX_URL=$LINUX_URL" >> "$GITHUB_OUTPUT"
+
           echo "✅ Assets parsed"
           echo "Windows: $WIN_ASSET ($WIN_SIZE bytes)"
           echo "Linux: $LINUX_ASSET ($LINUX_SIZE bytes)"
@@ -60,35 +86,35 @@ jobs:
         run: |
           WIN_SIZE="${{ steps.assets.outputs.WIN_SIZE }}"
           LINUX_SIZE="${{ steps.assets.outputs.LINUX_SIZE }}"
-          
+
           MIN_SIZE=10485760  # 10MB
-          
+
           WIN_STATUS="❌"
           LINUX_STATUS="❌"
           VERIFY_SUCCESS=false
-          
-          if [ ! -z "$WIN_SIZE" ] && [ "$WIN_SIZE" -gt $MIN_SIZE ]; then
+
+          if [ -n "$WIN_SIZE" ] && [ "$WIN_SIZE" -gt $MIN_SIZE ]; then
             WIN_STATUS="✅"
           fi
-          
-          if [ ! -z "$LINUX_SIZE" ] && [ "$LINUX_SIZE" -gt $MIN_SIZE ]; then
+
+          if [ -n "$LINUX_SIZE" ] && [ "$LINUX_SIZE" -gt $MIN_SIZE ]; then
             LINUX_STATUS="✅"
           fi
-          
+
           if [ "$WIN_STATUS" = "✅" ] && [ "$LINUX_STATUS" = "✅" ]; then
             VERIFY_SUCCESS=true
           fi
-          
-          echo "WIN_STATUS=$WIN_STATUS" >> $GITHUB_OUTPUT
-          echo "LINUX_STATUS=$LINUX_STATUS" >> $GITHUB_OUTPUT
-          echo "VERIFY_SUCCESS=$VERIFY_SUCCESS" >> $GITHUB_OUTPUT
-          
-          # Convert to MB
-          WIN_SIZE_MB=$(echo "scale=2; $WIN_SIZE / 1048576" | bc)
-          LINUX_SIZE_MB=$(echo "scale=2; $LINUX_SIZE / 1048576" | bc)
-          
-          echo "WIN_SIZE_MB=$WIN_SIZE_MB" >> $GITHUB_OUTPUT
-          echo "LINUX_SIZE_MB=$LINUX_SIZE_MB" >> $GITHUB_OUTPUT
+
+          echo "WIN_STATUS=$WIN_STATUS" >> "$GITHUB_OUTPUT"
+          echo "LINUX_STATUS=$LINUX_STATUS" >> "$GITHUB_OUTPUT"
+          echo "VERIFY_SUCCESS=$VERIFY_SUCCESS" >> "$GITHUB_OUTPUT"
+
+          # Konversi ke MB, guard terhadap size kosong/non-numerik
+          WIN_SIZE_MB=$(echo "scale=2; ${WIN_SIZE:-0} / 1048576" | bc)
+          LINUX_SIZE_MB=$(echo "scale=2; ${LINUX_SIZE:-0} / 1048576" | bc)
+
+          echo "WIN_SIZE_MB=$WIN_SIZE_MB" >> "$GITHUB_OUTPUT"
+          echo "LINUX_SIZE_MB=$LINUX_SIZE_MB" >> "$GITHUB_OUTPUT"
 
       - name: Send Discord Notification (Success)
         if: steps.verify.outputs.VERIFY_SUCCESS == 'true'
@@ -96,20 +122,21 @@ jobs:
         with:
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
           status: success
-          title: "✅ Release Verification Success"
+          title: "${{ steps.release-type.outputs.EMOJI }} ${{ steps.release-type.outputs.LABEL }} Verification Success"
           description: |
+            **Type:** ${{ steps.release-type.outputs.LABEL }} (${{ steps.release-type.outputs.ACTION }})
             **Version:** ${{ github.event.release.tag_name }}
             **Released:** ${{ github.event.release.published_at }}
-            
+
             **Commit Info:**
             • SHA: `${{ steps.commit-info.outputs.COMMIT_SHORT }}`
             • Author: ${{ steps.commit-info.outputs.COMMIT_AUTHOR }}
             • Message: ${{ steps.commit-info.outputs.COMMIT_MESSAGE }}
-            
+
             **Artifacts:**
             ${{ steps.verify.outputs.WIN_STATUS }} Windows: ${{ steps.assets.outputs.WIN_ASSET }} (${{ steps.verify.outputs.WIN_SIZE_MB }}MB)
             ${{ steps.verify.outputs.LINUX_STATUS }} Linux: ${{ steps.assets.outputs.LINUX_ASSET }} (${{ steps.verify.outputs.LINUX_SIZE_MB }}MB)
-            
+
             Both binaries verified and available for download!
 
       - name: Send Discord Notification (Failure)
@@ -118,18 +145,19 @@ jobs:
         with:
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
           status: failure
-          title: "❌ Release Verification Failed"
+          title: "❌ ${{ steps.release-type.outputs.LABEL }} Verification Failed"
           description: |
+            **Type:** ${{ steps.release-type.outputs.LABEL }} (${{ steps.release-type.outputs.ACTION }})
             **Version:** ${{ github.event.release.tag_name }}
-            
+
             **Commit Info:**
             • SHA: `${{ steps.commit-info.outputs.COMMIT_SHORT }}`
             • Author: ${{ steps.commit-info.outputs.COMMIT_AUTHOR }}
-            
+
             **Status:**
             ${{ steps.verify.outputs.WIN_STATUS }} Windows: ${{ steps.assets.outputs.WIN_ASSET }}
             ${{ steps.verify.outputs.LINUX_STATUS }} Linux: ${{ steps.assets.outputs.LINUX_ASSET }}
-            
+
             One or more artifacts failed verification!
 
       - name: Create Issue on Failure
@@ -140,7 +168,7 @@ jobs:
             github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `❌ Release ${{ github.event.release.tag_name }} - Verification Failed`,
-              body: `## Release Verification Failed\n\n**Version:** ${{ github.event.release.tag_name }}\n**Commit:** ${{ steps.commit-info.outputs.COMMIT_SHORT }}\n**Author:** ${{ steps.commit-info.outputs.COMMIT_AUTHOR }}\n\n### Status:\n- Windows: ${{ steps.verify.outputs.WIN_STATUS }}\n- Linux: ${{ steps.verify.outputs.LINUX_STATUS }}\n\n### Details:\n- Windows: ${{ steps.assets.outputs.WIN_ASSET }} (${{ steps.verify.outputs.WIN_SIZE_MB }}MB)\n- Linux: ${{ steps.assets.outputs.LINUX_ASSET }} (${{ steps.verify.outputs.LINUX_SIZE_MB }}MB)\n\nPlease check the release and re-run workflows if needed.`,
+              title: `❌ ${{ steps.release-type.outputs.LABEL }} ${{ github.event.release.tag_name }} - Verification Failed`,
+              body: `## ${{ steps.release-type.outputs.LABEL }} Verification Failed\n\n**Trigger action:** ${{ steps.release-type.outputs.ACTION }}\n**Version:** ${{ github.event.release.tag_name }}\n**Commit:** ${{ steps.commit-info.outputs.COMMIT_SHORT }}\n**Author:** ${{ steps.commit-info.outputs.COMMIT_AUTHOR }}\n\n### Status:\n- Windows: ${{ steps.verify.outputs.WIN_STATUS }}\n- Linux: ${{ steps.verify.outputs.LINUX_STATUS }}\n\n### Details:\n- Windows: ${{ steps.assets.outputs.WIN_ASSET }} (${{ steps.verify.outputs.WIN_SIZE_MB }}MB)\n- Linux: ${{ steps.assets.outputs.LINUX_ASSET }} (${{ steps.verify.outputs.LINUX_SIZE_MB }}MB)\n\nPlease check the release and re-run workflows if needed.`,
               labels: ['bug', 'release']
             })
