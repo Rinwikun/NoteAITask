@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-echo -e "\e[36m🚀 Starting Linux Native Release Pipeline for NoteAI Task Terminal v3.2.2-beta...\e[0m"
+echo -e "\e[36m🚀 Starting Linux Native Release Pipeline for NoteAI Task Terminal...\e[0m"
 
 # Repo root = satu level di atas folder scripts/ tempat file ini berada.
 # Pakai ini (bukan asumsi CWD) supaya script tetap benar dijalankan dari
@@ -43,5 +43,5 @@ dotnet publish "$REPO_ROOT/NoteAITask/NoteAITask.csproj" -c Release -r linux-x64
 # Make Binary Executable
 chmod +x "$PUBLISH_DIR/NoteAITask"
 
-echo -e "\e[32m✅ SUCCESS! Protected Linux Release v3.2.2-beta ready in:\e[0m"
+echo -e "\e[32m✅ SUCCESS! Protected Linux Release ready in:\e[0m"
 echo -e "\e[36m$PUBLISH_DIR/NoteAITask\e[0m"
