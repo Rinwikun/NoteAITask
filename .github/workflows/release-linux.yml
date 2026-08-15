@@ -1,4 +1,3 @@
-$linuxYml = @'
 name: Release Linux
 
 on:
@@ -67,6 +66,3 @@ jobs:
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-'@
-
-Set-Content -Path .github/workflows/release-linux.yml -Value $linuxYml -Encoding UTF8

@@ -37,17 +37,28 @@ jobs:
         id: find-dirs
         shell: pwsh
         run: |
-          $projectDir = Split-Path "${{ env.PROJECT_PATH }}" -Parent
-          $publishDir = Get-ChildItem -Path "$projectDir/bin/${{ env.BUILD_CONFIG }}" -Directory -Filter "*${{ env.RUNTIME }}*" | Select-Object -First 1
+          $publishDir = Get-ChildItem -Path "NoteAITask/bin/${{ env.BUILD_CONFIG }}" -Directory -Filter "*${{ env.RUNTIME }}*" | Select-Object -First 1
           
           if (-not $publishDir) {
             Write-Host "❌ Publish directory not found!"
+            Write-Host "Searched in: NoteAITask/bin/${{ env.BUILD_CONFIG }}"
             exit 1
           }
           
           $publishPath = Join-Path $publishDir.FullName "publish"
           echo "PUBLISH_DIR=$publishPath" >> $env:GITHUB_OUTPUT
           Write-Host "✅ Found publish dir: $publishPath"
+
+      - name: Debug Directory Structure
+        shell: pwsh
+        run: |
+          Write-Host "Current directory: $(Get-Location)"
+          Write-Host "`nLooking for: NoteAITask/bin/${{ env.BUILD_CONFIG }}"
+          if (Test-Path "NoteAITask/bin/${{ env.BUILD_CONFIG }}") {
+            Get-ChildItem "NoteAITask/bin/${{ env.BUILD_CONFIG }}" -Directory
+          } else {
+            Write-Host "❌ Directory doesn't exist yet. Build step will create it."
+          }
 
       - name: Step 1 - Build Loose Assemblies
         run: dotnet publish "${{ env.PROJECT_PATH }}" -c ${{ env.BUILD_CONFIG }} -r ${{ env.RUNTIME }} --self-contained true /p:PublishSingleFile=false /p:PublishReadyToRun=false
