@@ -21,11 +21,11 @@ try {
     $apiUrl = "https://api.github.com/repos/$repo/releases"
     $webClient = New-Object System.Net.WebClient
     $webClient.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-    
+
     $jsonResponse = $webClient.DownloadString($apiUrl)
     # Parse JSON Release
     $releases = $jsonResponse | ConvertFrom-Json
-    
+
     # Ambil release paling atas (terbaru)
     $latestRelease = $releases[0]
     $asset = $latestRelease.assets | Where-Object { $_.name -eq $binaryName }

@@ -117,16 +117,16 @@ Below is the status matrix of the feature development roadmap for **NoteAI Task 
 
 ```powershell
 # Quick Install using PowerShell (irm)
-irm https://raw.githubusercontent.com/Rinwikun/NoteAITask/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/Rinwikun/NoteAITask/main/scripts/install.ps1 | iex
 
 # Manual Installation
 # Download the latest NoteAITask-Windows-x64.exe binary directly from GitHub Releases:
 # https://github.com/Rinwikun/NoteAITask/releases
 ```
-### Install NoteAITask in **Linux/MacOS**
+### Install NoteAITask in **Linux**
     ```bash
     # Install using One-Liner Shell Script (curl)
-    curl -fsSL https://raw.githubusercontent.com/Rinwikun/NoteAITask/main/install.sh | sh
+    curl -fsSL https://raw.githubusercontent.com/Rinwikun/NoteAITask/main/scripts/install.sh | sh
 
     # Run Application
     noteaitask
