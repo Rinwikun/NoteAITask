@@ -303,7 +303,7 @@ jobs:
         if: steps.verify.outputs.VERIFY_SUCCESS == 'true'
         uses: sarisia/actions-status-discord@v1
         with:
-          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
           status: success
           title: "🧪 Pre-Release Verification Success"
           description: |
@@ -321,7 +321,7 @@ jobs:
         if: steps.verify.outputs.VERIFY_SUCCESS != 'true'
         uses: sarisia/actions-status-discord@v1
         with:
-          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
           status: failure
           title: "❌ Pre-Release Verification Failed"
           description: |
