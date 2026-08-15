@@ -58,6 +58,7 @@ jobs:
           PUBLISH_DIR="${{ steps.find-dirs.outputs.PUBLISH_DIR }}"
           OBFUSCAR_XML="obfuscar.xml"
           
+          # Find obfuscar.xml
           if [ ! -f "$OBFUSCAR_XML" ]; then
             OBFUSCAR_XML="NoteAITask/obfuscar.xml"
           fi
@@ -67,9 +68,12 @@ jobs:
             exit 1
           fi
 
+          # Convert to absolute path
+          OBFUSCAR_XML=$(cd "$(dirname "$OBFUSCAR_XML")" && pwd)/$(basename "$OBFUSCAR_XML")
+          echo "Using obfuscar.xml: $OBFUSCAR_XML"
+
           cd "$PUBLISH_DIR"
           echo "Running Obfuscar from: $(pwd)"
-          echo "Config file: $OBFUSCAR_XML"
           
           $HOME/.dotnet/tools/obfuscar.console "$OBFUSCAR_XML"
           OBFUSCATION_RESULT=$?
