@@ -12,10 +12,17 @@
 
 > ⚠️ **Language Notice:** Currently, this application interface and logging output are exclusively in **Indonesian (Bahasa Indonesia)**. Multi-language (i18n / English) support is planned for future updates.
 
-**NoteAI Task Terminal** is a smart, desktop-based cross-platform application (Windows, Arch Linux/Ubuntu, macOS) integrated with a **Local AI Engine (Ollama)** and a **Deterministic Physical Terminal Agent**.
+**NoteAI Task Terminal** is a smart, desktop-based cross-platform application (Windows, Arch Linux/Ubuntu) integrated with a **Local AI Engine (Ollama)** and a **Deterministic Physical Terminal Agent**.
 
 It seamlessly translates natural language instructions into concrete filesystem structure manifests and terminal commands with zero path leakage.
 
+---
+
+| OS | Successful and unsuccessful Install |
+| :--- | :---: |
+| Windows | Successful |
+| Linux | Successful |
+| MacOS | unsuccessful |
 ---
 
 ## 🚦 Module Development Progress Tracker
