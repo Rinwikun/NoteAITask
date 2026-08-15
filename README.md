@@ -18,11 +18,11 @@ It seamlessly translates natural language instructions into concrete filesystem 
 
 ---
 
-| OS | Successful and unsuccessful Install |
+| OS | Successful and Unsuccessful Install |
 | :--- | :---: |
 | Windows | Successful |
 | Linux | Successful |
-| MacOS | unsuccessful |
+| MacOS | Unsuccessful |
 ---
 
 ## 🚦 Module Development Progress Tracker
