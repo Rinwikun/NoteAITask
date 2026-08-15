@@ -8,6 +8,13 @@ on:
 permissions:
   contents: write
 
+env:
+  DOTNET_VERSION: '10.0.x'
+  PROJECT_PATH: 'NoteAITask/NoteAITask.csproj'
+  BUILD_CONFIG: 'Release'
+  RUNTIME: 'linux-x64'
+  ARTIFACT_NAME: 'NoteAITask-Linux-x64'
+
 jobs:
   build-linux:
     name: Build Linux Binary
@@ -17,10 +24,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET SDK 10
+      - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Install Obfuscar Global Tool
         run: dotnet tool install --global Obfuscar.GlobalTool
@@ -29,40 +36,103 @@ jobs:
         run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
       - name: Step 1 - Build Loose Assemblies
-        run: dotnet publish NoteAITask/NoteAITask.csproj -c Release -r linux-x64 --self-contained true /p:PublishSingleFile=false /p:PublishReadyToRun=false
+        run: dotnet publish "${{ env.PROJECT_PATH }}" -c ${{ env.BUILD_CONFIG }} -r ${{ env.RUNTIME }} --self-contained true /p:PublishSingleFile=false /p:PublishReadyToRun=false
+
+      - name: Find Publish Directory (After Build)
+        id: find-dirs
+        run: |
+          PUBLISH_DIR=$(find NoteAITask/bin/${{ env.BUILD_CONFIG }} -type d -name "${{ env.RUNTIME }}" | head -1)/publish
+          
+          if [ ! -d "$PUBLISH_DIR" ]; then
+            echo "❌ Publish directory not found!"
+            echo "Searched in: NoteAITask/bin/${{ env.BUILD_CONFIG }}"
+            find NoteAITask/bin -type d 2>/dev/null || echo "No bin directory found"
+            exit 1
+          fi
+          
+          echo "PUBLISH_DIR=$PUBLISH_DIR" >> $GITHUB_OUTPUT
+          echo "✅ Found publish dir: $PUBLISH_DIR"
 
       - name: Step 2 & 3 - Run Obfuscar & Replace Assembly
         run: |
-          PUBLISH_DIR="$GITHUB_WORKSPACE/NoteAITask/bin/Release/net10.0/linux-x64/publish"
-          OBFUSCAR_XML="$GITHUB_WORKSPACE/obfuscar.xml"
+          PUBLISH_DIR="${{ steps.find-dirs.outputs.PUBLISH_DIR }}"
+          OBFUSCAR_XML="obfuscar.xml"
+          
           if [ ! -f "$OBFUSCAR_XML" ]; then
-            OBFUSCAR_XML="$GITHUB_WORKSPACE/NoteAITask/obfuscar.xml"
+            OBFUSCAR_XML="NoteAITask/obfuscar.xml"
+          fi
+          
+          if [ ! -f "$OBFUSCAR_XML" ]; then
+            echo "❌ obfuscar.xml not found!"
+            exit 1
           fi
 
           cd "$PUBLISH_DIR"
+          echo "Running Obfuscar from: $(pwd)"
+          echo "Config file: $OBFUSCAR_XML"
+          
           $HOME/.dotnet/tools/obfuscar.console "$OBFUSCAR_XML"
+          OBFUSCATION_RESULT=$?
+          
+          if [ $OBFUSCATION_RESULT -ne 0 ]; then
+            echo "❌ Obfuscar failed with exit code: $OBFUSCATION_RESULT"
+            exit 1
+          fi
 
           if [ -f "./protected/NoteAITask.dll" ]; then
             cp -f ./protected/NoteAITask.dll ./NoteAITask.dll
             rm -rf ./protected
             echo "✅ Obfuscated Linux assembly applied."
+          else
+            echo "❌ Protected DLL not found after obfuscation!"
+            exit 1
           fi
 
       - name: Step 4 - Final Single-File Bundle
-        run: dotnet publish NoteAITask/NoteAITask.csproj -c Release -r linux-x64 --self-contained true /p:PublishSingleFile=true /p:PublishReadyToRun=false --no-restore
+        run: dotnet publish "${{ env.PROJECT_PATH }}" -c ${{ env.BUILD_CONFIG }} -r ${{ env.RUNTIME }} --self-contained true /p:PublishSingleFile=true /p:PublishReadyToRun=false --no-restore
+
+      - name: Verify Build Output
+        run: |
+          PUBLISH_DIR="${{ steps.find-dirs.outputs.PUBLISH_DIR }}"
+          BINARY_PATH="$PUBLISH_DIR/NoteAITask"
+          
+          if [ ! -f "$BINARY_PATH" ]; then
+            echo "❌ Build failed: NoteAITask binary not found at $BINARY_PATH"
+            exit 1
+          fi
+          
+          FILE_SIZE=$(du -h "$BINARY_PATH" | cut -f1)
+          echo "✅ Build successful. File size: $FILE_SIZE"
 
       - name: Rename Output Binary
         run: |
-          PUBLISH_DIR="$GITHUB_WORKSPACE/NoteAITask/bin/Release/net10.0/linux-x64/publish"
-          mv "$PUBLISH_DIR/NoteAITask" "$PUBLISH_DIR/NoteAITask-Linux-x64"
+          PUBLISH_DIR="${{ steps.find-dirs.outputs.PUBLISH_DIR }}"
+          BINARY_PATH="$PUBLISH_DIR/NoteAITask"
+          RENAMED_PATH="$PUBLISH_DIR/${{ env.ARTIFACT_NAME }}"
+          
+          if [ ! -f "$BINARY_PATH" ]; then
+            echo "❌ Binary not found: $BINARY_PATH"
+            exit 1
+          fi
+          
+          mv "$BINARY_PATH" "$RENAMED_PATH"
+          echo "✅ Renamed to: $(basename $RENAMED_PATH)"
 
       - name: Make Linux Binary Executable
-        run: chmod +x NoteAITask/bin/Release/net10.0/linux-x64/publish/NoteAITask-Linux-x64
+        run: |
+          BINARY_PATH="${{ steps.find-dirs.outputs.PUBLISH_DIR }}/${{ env.ARTIFACT_NAME }}"
+          chmod +x "$BINARY_PATH"
+          echo "✅ Binary is now executable"
 
       - name: Upload Linux Binary to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: NoteAITask/bin/Release/net10.0/linux-x64/publish/NoteAITask-Linux-x64
+          files: ${{ steps.find-dirs.outputs.PUBLISH_DIR }}/${{ env.ARTIFACT_NAME }}
           prerelease: true
+          draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Failed Notification
+        if: failure()
+        run: echo "❌ Build workflow failed. Check logs above for details."
