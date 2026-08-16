@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using System.Threading;
 
 namespace NoteAITask.Services;
 
@@ -11,8 +12,6 @@ public class AppSettingsData
     public string OllamaUrl { get; set; } = "http://localhost:11434";
     public string SelectedModel { get; set; } = "qwen2.5-coder:7b";
     public bool UseAutoDetectModel { get; set; } = false;
-
-    // CUSTOM SYSTEM PROMPTS (EDITABLE VIA SETTINGS)
     public string SystemPromptTemplate { get; set; } = @"
 Kamu adalah World-Class Cross-Platform AI Terminal Agent.
 Tugas utama: Analisa intent dari request user, lalu klasifikasikan apakah user ingin MEMBACA/MENGECEK ('READ') atau MEMBUAT/MODIFIKASI ('WRITE').
@@ -49,6 +48,7 @@ ATURAN STRICT:
 public class AppSettingsService
 {
     private readonly string _filePath;
+    public string DebugFilePath => _filePath;
 
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
@@ -59,6 +59,7 @@ public class AppSettingsService
     {
         string appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         string configDir = Path.Combine(appDataFolder, "NoteAITask");
+        Directory.CreateDirectory(configDir);
 
         if (!Directory.Exists(configDir))
         {
@@ -70,27 +71,47 @@ public class AppSettingsService
 
     public AppSettingsData LoadSettings()
     {
-        try
+        const int maxRetries = 3;
+
+        for (int attempt = 0; attempt < maxRetries; attempt++)
         {
-            if (File.Exists(_filePath))
+            try
             {
+                if (!File.Exists(_filePath)) return new AppSettingsData();
+
                 string json = File.ReadAllText(_filePath);
                 var data = JsonSerializer.Deserialize<AppSettingsData>(json);
                 if (data != null) return data;
+
+                break; // json valid tapi null — tidak ada gunanya retry
+            }
+            catch (IOException) when (attempt < maxRetries - 1)
+            {
+                // File kemungkinan sedang di-lock sesaat oleh proses lain (AV/indexer) pasca rename.
+                Thread.Sleep(50);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AppSettingsService] Load gagal: {ex}");
+                break;
             }
         }
-        catch { }
 
         return new AppSettingsData();
     }
-
+    /// <summary>
+    /// Menulis settings secara atomik (write-to-temp lalu replace) dan MELEMPAR exception
+    /// kalau gagal, supaya caller wajib menangani kegagalan — bukan diam-diam sukses palsu.
+    /// </summary>
     public void SaveSettings(AppSettingsData settings)
     {
-        try
-        {
-            string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(_filePath, json);
-        }
-        catch { }
+        string tempFile = _filePath + ".tmp";
+        string json = JsonSerializer.Serialize(settings, _jsonOptions);
+        File.WriteAllText(tempFile, json);
+
+        // Replace atomik: menghindari file settings.json corrupt/setengah-tertulis
+        // kalau proses mati di tengah jalan, dan menghindari torn-write kalau ada
+        // instance AppSettingsService lain yang baca bersamaan.
+        File.Move(tempFile, _filePath, overwrite: true);
     }
 }

@@ -84,6 +84,9 @@ public partial class NoteAIViewModel : ViewModelBase
         {
             var settings = _settingsService.LoadSettings();
 
+            AppendLog($"[DEBUG] Settings file: {_settingsService.DebugFilePath}");
+            AppendLog($"[DEBUG] Loaded SelectedModel (raw): '{settings.SelectedModel}'");
+
             // 1. SANITASI URL: Hapus trailing slash agar tidak terjadi double-slash (//api/generate)
             string rawOllamaUrl = string.IsNullOrWhiteSpace(settings.OllamaUrl) ? "http://localhost:11434" : settings.OllamaUrl.Trim();
             string ollamaUrl = rawOllamaUrl.TrimEnd('/');

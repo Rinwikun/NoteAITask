@@ -1,4 +1,4 @@
-Write-Host "🚀 Starting Linux Release Pipeline for NoteAI Task Terminal v3.2.2-beta..." -ForegroundColor Cyan
+Write-Host "🚀 Starting Linux Release Pipeline for NoteAI Task Terminal..." -ForegroundColor Cyan
 
 # Repo root = satu level di atas folder scripts/ tempat file ini berada.
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -37,5 +37,5 @@ Set-Location -Path $repoRoot
 Write-Host "⚡ Step 4: Bundling into Protected Single-File Linux Binary..." -ForegroundColor Yellow
 dotnet publish "$repoRoot\NoteAITask\NoteAITask.csproj" -c Release -r linux-x64 --self-contained true /p:PublishSingleFile=true /p:PublishReadyToRun=false --no-restore
 
-Write-Host "✅ SUCCESS! Protected Linux Release v3.2.2-beta ready in:" -ForegroundColor Green
+Write-Host "✅ SUCCESS! Protected Linux Release ready in:" -ForegroundColor Green
 Write-Host "$publishDir\NoteAITask" -ForegroundColor Cyan

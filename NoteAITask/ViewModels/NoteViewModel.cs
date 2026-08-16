@@ -13,12 +13,13 @@ namespace NoteAITask.ViewModels;
 public partial class NoteViewModel : ViewModelBase
 {
     private readonly NoteStorageService _storageService = new();
+    private readonly AppSettingsService _settingsService = new();
 
     // Mode View State
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ViewABackground))]
     [NotifyPropertyChangedFor(nameof(ViewBBackground))]
-    private bool _isViewA = true;
+    private bool _isViewA;
 
     public string ViewABackground => IsViewA ? "#89B4FA" : "#313244";
     public string ViewBBackground => !IsViewA ? "#89B4FA" : "#313244";
@@ -87,6 +88,8 @@ public partial class NoteViewModel : ViewModelBase
 
     public NoteViewModel()
     {
+        var settings = _settingsService.LoadSettings();
+        _isViewA = settings.IsDefaultViewA;
         LoadData();
     }
 

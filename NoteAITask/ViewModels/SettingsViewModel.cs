@@ -1,11 +1,14 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Net.Http;
-using System.Text.Json;
-using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NoteAITask.Services;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace NoteAITask.ViewModels;
 
@@ -13,7 +16,7 @@ public partial class SettingsViewModel : ViewModelBase
 {
     private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(3) };
     private readonly AppSettingsService _settingsService = new();
-
+    private CancellationTokenSource? _detectCts;
     // Default Note View Settings
     [ObservableProperty]
     private bool _isDefaultViewA;
@@ -112,27 +115,30 @@ public partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     public void SaveViewSettings()
     {
-        PersistAllSettings();
+        PersistViewSettings();          // <-- ganti dari PersistAllSettings()
         SaveViewMessageText = "✅ Tampilan Default Disimpan!";
         _ = ClearViewSaveMessageAsync();
     }
 
     // 2. FUNGSI KHUSUS SIMPAN OLLAMA ENGINE CONFIG
-[RelayCommand]
+    [RelayCommand]
     public void SaveEngineSettings()
     {
         if (UseAutoDetectModel && !string.IsNullOrWhiteSpace(SelectedDetectedModel))
-        {
             SelectedModel = SelectedDetectedModel.Trim();
-        }
 
         if (string.IsNullOrWhiteSpace(SelectedModel))
-        {
             SelectedModel = "qwen2.5-coder:7b";
-        }
 
-        PersistAllSettings();
-        SaveEngineMessageText = $"✅ Engine & Model ({SelectedModel}) Disimpan!";
+        try
+        {
+            PersistEngineSettings();    // <-- ganti dari PersistAllSettings()
+            SaveEngineMessageText = $"✅ Engine & Model ({SelectedModel}) Disimpan!";
+        }
+        catch (Exception ex)
+        {
+            SaveEngineMessageText = $"🔴 Gagal menyimpan: {ex.Message}";
+        }
         _ = ClearEngineSaveMessageAsync();
     }
 
@@ -140,24 +146,43 @@ public partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     public void SavePromptSettings()
     {
-        PersistAllSettings();
+        PersistPromptSettings();        // <-- ganti dari PersistAllSettings()
         SavePromptMessageText = "✅ System Prompt Berhasil Disimpan!";
         _ = ClearPromptSaveMessageAsync();
     }
-
-    // PENULISAN DOKUMEN SETTINGS LOKAL (SHARED DATA STATE)
-    private void PersistAllSettings()
+    private void PersistViewSettings()
     {
-        _settingsService.SaveSettings(new AppSettingsData
+        var current = _settingsService.LoadSettings(); 
+        current.IsDefaultViewA = IsDefaultViewA;
+        _settingsService.SaveSettings(BuildCurrentSnapshot());
+    }
+
+    private void PersistEngineSettings()
+    {
+        var current = _settingsService.LoadSettings();
+        current.OllamaUrl = OllamaUrl.Trim();
+        current.SelectedModel = SelectedModel.Trim();
+        current.UseAutoDetectModel = UseAutoDetectModel; 
+        _settingsService.SaveSettings(BuildCurrentSnapshot());
+    }
+
+    private void PersistPromptSettings()
+    {
+        var current = _settingsService.LoadSettings();
+        current.SystemPromptTemplate = SystemPromptTemplate;
+        _settingsService.SaveSettings(BuildCurrentSnapshot());
+    }
+    private AppSettingsData BuildCurrentSnapshot()
+    {
+        return new AppSettingsData
         {
             IsDefaultViewA = IsDefaultViewA,
             OllamaUrl = OllamaUrl.Trim(),
             SelectedModel = SelectedModel.Trim(),
             UseAutoDetectModel = UseAutoDetectModel,
             SystemPromptTemplate = SystemPromptTemplate
-        });
+        };
     }
-
     private async Task ClearViewSaveMessageAsync()
     {
         await Task.Delay(2500);
@@ -206,41 +231,52 @@ public partial class SettingsViewModel : ViewModelBase
 
     private async Task AutoDetectLocalModelAsync()
     {
+        _detectCts?.Cancel();
+        _detectCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _detectCts = cts;
+
         DetectedModelStatusText = "🔍 Menemukan AI Lokal...";
-        DetectedModels.Clear();
 
         try
         {
-            var response = await _httpClient.GetAsync($"{OllamaUrl}/api/tags");
+            var response = await _httpClient.GetAsync($"{OllamaUrl}/api/tags", cts.Token);
+            if (cts.IsCancellationRequested) return; // request ini sudah disusul request baru, buang hasilnya
+
             if (response.IsSuccessStatusCode)
             {
-                string json = await response.Content.ReadAsStringAsync();
+                string json = await response.Content.ReadAsStringAsync(cts.Token);
                 using var doc = JsonDocument.Parse(json);
                 var models = doc.RootElement.GetProperty("models");
 
-                int count = models.GetArrayLength();
-                if (count > 0)
+                var freshModels = new List<string>();
+                foreach (var model in models.EnumerateArray())
                 {
-                    foreach (var model in models.EnumerateArray())
-                    {
-                        string modelName = model.GetProperty("name").GetString() ?? "";
-                        if (!string.IsNullOrEmpty(modelName))
-                        {
-                            DetectedModels.Add(modelName);
-                        }
-                    }
+                    string modelName = model.GetProperty("name").GetString() ?? "";
+                    if (!string.IsNullOrEmpty(modelName))
+                        freshModels.Add(modelName);
+                }
 
-                    if (DetectedModels.Contains(SelectedModel))
-                    {
-                        SelectedDetectedModel = SelectedModel;
-                    }
+                if (cts.IsCancellationRequested) return; // cek ulang setelah parsing, sebelum menyentuh UI state
+
+                DetectedModels.Clear();
+                foreach (var m in freshModels) DetectedModels.Add(m);
+
+                if (DetectedModels.Count > 0)
+                {
+                    // PRESERVE pilihan user: match case-insensitive, jangan timpa kecuali benar2 tidak ada.
+                    var match = DetectedModels.FirstOrDefault(
+                        m => string.Equals(m, SelectedModel, StringComparison.OrdinalIgnoreCase));
+
+                    if (match != null)
+                        SelectedDetectedModel = match;
                     else
                     {
                         SelectedDetectedModel = DetectedModels[0];
                         SelectedModel = DetectedModels[0];
                     }
 
-                    DetectedModelStatusText = $"🤖 Terdeteksi {count} AI Lokal di Ollama:";
+                    DetectedModelStatusText = $"🤖 Terdeteksi {DetectedModels.Count} AI Lokal di Ollama:";
                 }
                 else
                 {
@@ -252,9 +288,14 @@ public partial class SettingsViewModel : ViewModelBase
                 DetectedModelStatusText = "🔴 Gagal terhubung ke Ollama.";
             }
         }
+        catch (OperationCanceledException)
+        {
+            // Request lama dibatalkan oleh request baru — abaikan, bukan error.
+        }
         catch
         {
-            DetectedModelStatusText = "🔴 Ollama tidak aktif / Port URL salah.";
+            if (!cts.IsCancellationRequested)
+                DetectedModelStatusText = "🔴 Ollama tidak aktif / Port URL salah.";
         }
     }
 
