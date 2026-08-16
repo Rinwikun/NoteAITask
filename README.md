@@ -31,7 +31,6 @@ Below is the status matrix of the feature development roadmap for **NoteAI Task 
 
 | Feature / Module | Development Status | Stability / Test Grade | Score | Notes |
 | :--- | :---: | :---: | :--- | :--- |
-
 | **📝 Note Dual-View** | 🟡 In Progress | 🟢 Stable | 90% |Split-View (3 Columns) & Explorer View options |
 | **💻 Note Terminal** | 🟢 Complete | 🟡 Unstable | 50% | Direct execution for PowerShell, CMD, Bash/Zsh |
 | **🤖 Note AI Terminal Agent** | 🟡 In Progress | 🟡 Unstable | 25% | Dual-Intent Engine, Manifest Parser & Path Resolver |
@@ -39,7 +38,7 @@ Below is the status matrix of the feature development roadmap for **NoteAI Task 
 | **🔒 Enterprise Code Protection**| 🟢 Complete | 🟢 Stable | 99% | Obfuscar, Single-File AOT & Symbol Stripping |
 | **🌐 Multi-Language (i18n)** | 🔴 Planned | ⚪ Not Started | 0% | English translation planned for future releases |
 
-Development Status: 🟢 Complete, 🟡 In Progress, 🔴 Planned
+Development Status: 🟢 Complete, 🟡 In Progress, 🔴 Planned\
 Stability / Test Grade: 🟢 Stable, 🟡 Unstable, ⚪ Not Started 
 
 ---
