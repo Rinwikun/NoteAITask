@@ -34,7 +34,7 @@ Below is the status matrix of the feature development roadmap for **NoteAI Task 
 | **📝 Note Dual-View** | 🟡 In Progress | 🟢 Stable | 90% |Split-View (3 Columns) & Explorer View options |
 | **💻 Note Terminal** | 🟢 Complete | 🟡 Unstable | 50% | Direct execution for PowerShell, CMD, Bash/Zsh |
 | **🤖 Note AI Terminal Agent** | 🟡 In Progress | 🟡 Unstable | 25% | Dual-Intent Engine, Manifest Parser & Path Resolver |
-| **⚙️ Dynamic AI Settings** | 🟡 In Progress | 🟡 Unstable | 5% | Auto-detect Ollama models & Editable System Prompt |
+| **⚙️ Dynamic AI Settings** | 🟡 In Progress | 🟢 Stable | 7% | Auto-detect Ollama models & Editable System Prompt |
 | **🔒 Enterprise Code Protection**| 🟢 Complete | 🟢 Stable | 99% | Obfuscar, Single-File AOT & Symbol Stripping |
 | **🌐 Multi-Language (i18n)** | 🔴 Planned | ⚪ Not Started | 0% | English translation planned for future releases |
 
