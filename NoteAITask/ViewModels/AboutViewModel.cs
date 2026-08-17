@@ -11,7 +11,7 @@ public partial class AboutViewModel : ViewModelBase
     private string _appName = "NoteAI Task Terminal";
 
     [ObservableProperty]
-    private string _appVersion = "v3.2.2-beta (Cross-Platform Edition)";
+    private string _appVersion = "v3.2.3-beta (Cross-Platform Edition)";
 
     [ObservableProperty]
     private string _developerName = "Rinwikun";

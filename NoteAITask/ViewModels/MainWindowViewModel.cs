@@ -1,10 +1,11 @@
-﻿using System;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using NoteAITask.Services;
+using System;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using NoteAITask.Services;
 
 namespace NoteAITask.ViewModels;
 
@@ -55,12 +56,24 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
+        Debug.WriteLine($"[DEBUG-MAIN-VM] MainWindowViewModel Constructor Executing...");
+        Console.WriteLine($"[DEBUG-MAIN-VM] MainWindowViewModel Constructor Executing...");
+
         _noteView = new Views.NoteView { DataContext = _noteViewModel };
         _shellView = new Views.NoteShellView { DataContext = _shellViewModel };
         _aiView = new Views.NoteAIView { DataContext = _aiViewModel };
         _settingsView = new Views.SettingsView { DataContext = _settingsViewModel };
-        _noteViewModel.IsViewA = _settingsViewModel.IsDefaultViewA;
         _aboutView = new Views.AboutView { DataContext = _aboutViewModel };
+
+
+        Debug.WriteLine($"[DEBUG-MAIN-VM] Syncing Initial View State...");
+        Debug.WriteLine($"[DEBUG-MAIN-VM] SettingsViewModel.IsDefaultViewA: {_settingsViewModel.IsDefaultViewA}");
+        Debug.WriteLine($"[DEBUG-MAIN-VM] NoteViewModel.IsViewA BEFORE sync: {_noteViewModel.IsViewA}");
+
+        _noteViewModel.IsViewA = _settingsViewModel.IsDefaultViewA;
+
+        Debug.WriteLine($"[DEBUG-MAIN-VM] NoteViewModel.IsViewA AFTER sync: {_noteViewModel.IsViewA}");
+
         CurrentPage = _noteView;
         StartOllamaStatusMonitoring();
     }
@@ -111,7 +124,21 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void NavigateToNote()
     {
+        Debug.WriteLine($"[DEBUG-MAIN-VM] NavigateToNote Command Triggered!");
+        Console.WriteLine($"[DEBUG-MAIN-VM] NavigateToNote Command Triggered!");
+
         SelectedTabIndex = 0;
+
+        // Fix: Muat ulang pengaturan dari disk saat pengguna kembali ke tab Note
+        var currentSettings = _settingsService.LoadSettings();
+
+        Debug.WriteLine($"[DEBUG-MAIN-VM] Loaded Settings from Disk for Navigation -> IsDefaultViewA: {currentSettings.IsDefaultViewA}");
+        Debug.WriteLine($"[DEBUG-MAIN-VM] NoteViewModel.IsViewA BEFORE update: {_noteViewModel.IsViewA}");
+
+        _noteViewModel.IsViewA = currentSettings.IsDefaultViewA;
+
+        Debug.WriteLine($"[DEBUG-MAIN-VM] NoteViewModel.IsViewA AFTER update: {_noteViewModel.IsViewA}");
+
         CurrentPage = _noteView;
         UpdateTabProperties();
     }

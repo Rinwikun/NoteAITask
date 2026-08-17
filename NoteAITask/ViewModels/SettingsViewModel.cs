@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace NoteAITask.ViewModels;
 
@@ -97,6 +98,8 @@ public partial class SettingsViewModel : ViewModelBase
     // HANDLER SINKRONISASI RADIO BUTTON A & B + AUTO SAVE
     partial void OnIsDefaultViewAChanged(bool value)
     {
+        Debug.WriteLine($"[DEBUG-SETTINGS-VM] OnIsDefaultViewAChanged Triggered -> Value: {value}");
+        Console.WriteLine($"[DEBUG-SETTINGS-VM] OnIsDefaultViewAChanged Triggered -> Value: {value}");
         if (value)
         {
             IsDefaultViewB = false;
@@ -105,17 +108,22 @@ public partial class SettingsViewModel : ViewModelBase
 
     partial void OnIsDefaultViewBChanged(bool value)
     {
+        Debug.WriteLine($"[DEBUG-SETTINGS-VM] OnIsDefaultViewBChanged Triggered -> Value: {value}");
+        Console.WriteLine($"[DEBUG-SETTINGS-VM] OnIsDefaultViewBChanged Triggered -> Value: {value}");
         if (value)
         {
             IsDefaultViewA = false;
         }
     }
-
-    // 1. FUNGSI KHUSUS SIMPAN DEFAULT NOTE VIEW
     [RelayCommand]
     public void SaveViewSettings()
     {
-        PersistViewSettings();          // <-- ganti dari PersistAllSettings()
+        Debug.WriteLine($"[DEBUG-SETTINGS-VM] SaveViewSettings Command Triggered!");
+        Debug.WriteLine($"[DEBUG-SETTINGS-VM] Current VM State -> IsDefaultViewA: {IsDefaultViewA}, IsDefaultViewB: {IsDefaultViewB}");
+        Console.WriteLine($"[DEBUG-SETTINGS-VM] SaveViewSettings Command Triggered!");
+        Console.WriteLine($"[DEBUG-SETTINGS-VM] Current VM State -> IsDefaultViewA: {IsDefaultViewA}, IsDefaultViewB: {IsDefaultViewB}");
+
+        PersistViewSettings();         
         SaveViewMessageText = "✅ Tampilan Default Disimpan!";
         _ = ClearViewSaveMessageAsync();
     }
@@ -152,9 +160,15 @@ public partial class SettingsViewModel : ViewModelBase
     }
     private void PersistViewSettings()
     {
-        var current = _settingsService.LoadSettings(); 
+        var current = _settingsService.LoadSettings();
+        Debug.WriteLine($"[DEBUG-SETTINGS-VM] State BEFORE Update -> Disk IsDefaultViewA: {current.IsDefaultViewA}");
+        Console.WriteLine($"[DEBUG-SETTINGS-VM] State BEFORE Update -> Disk IsDefaultViewA: {current.IsDefaultViewA}");
+
         current.IsDefaultViewA = IsDefaultViewA;
-        _settingsService.SaveSettings(BuildCurrentSnapshot());
+
+        Debug.WriteLine($"[DEBUG-SETTINGS-VM] State AFTER Update -> New Target IsDefaultViewA: {current.IsDefaultViewA}");
+        Console.WriteLine($"[DEBUG-SETTINGS-VM] State AFTER Update -> New Target IsDefaultViewA: {current.IsDefaultViewA}");
+        _settingsService.SaveSettings(current);
     }
 
     private void PersistEngineSettings()
@@ -163,14 +177,14 @@ public partial class SettingsViewModel : ViewModelBase
         current.OllamaUrl = OllamaUrl.Trim();
         current.SelectedModel = SelectedModel.Trim();
         current.UseAutoDetectModel = UseAutoDetectModel; 
-        _settingsService.SaveSettings(BuildCurrentSnapshot());
+        _settingsService.SaveSettings(current);
     }
 
     private void PersistPromptSettings()
     {
         var current = _settingsService.LoadSettings();
         current.SystemPromptTemplate = SystemPromptTemplate;
-        _settingsService.SaveSettings(BuildCurrentSnapshot());
+        _settingsService.SaveSettings(current);
     }
     private AppSettingsData BuildCurrentSnapshot()
     {

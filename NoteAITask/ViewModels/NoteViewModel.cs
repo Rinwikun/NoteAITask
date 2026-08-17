@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NoteAITask.Models;
 using NoteAITask.Services;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace NoteAITask.ViewModels;
 
@@ -88,9 +89,23 @@ public partial class NoteViewModel : ViewModelBase
 
     public NoteViewModel()
     {
+        Debug.WriteLine($"[DEBUG-NOTE-VM] Constructor Executing...");
+        Console.WriteLine($"[DEBUG-NOTE-VM] Constructor Executing...");
+
         var settings = _settingsService.LoadSettings();
         _isViewA = settings.IsDefaultViewA;
+
+        Debug.WriteLine($"[DEBUG-NOTE-VM] Initialized IsViewA from Disk -> IsViewA: {_isViewA}");
+        Console.WriteLine($"[DEBUG-NOTE-VM] Initialized IsViewA from Disk -> IsViewA: {_isViewA}");
+
         LoadData();
+    }
+    partial void OnIsViewAChanged(bool value)
+    {
+        Debug.WriteLine($"[DEBUG-NOTE-VM] IsViewA Changed Event Fired! New Value -> IsViewA: {value}");
+        Debug.WriteLine($"[DEBUG-NOTE-VM] Computed UI Props -> ViewABackground: '{ViewABackground}', ViewBBackground: '{ViewBBackground}'");
+        Console.WriteLine($"[DEBUG-NOTE-VM] IsViewA Changed Event Fired! New Value -> IsViewA: {value}");
+        Console.WriteLine($"[DEBUG-NOTE-VM] Computed UI Props -> ViewABackground: '{ViewABackground}', ViewBBackground: '{ViewBBackground}'");
     }
 
     public void LoadData(string? targetFolderName = null, string? targetNoteTitle = null)

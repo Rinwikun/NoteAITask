@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NoteAITask.Services;
 
@@ -47,12 +49,14 @@ ATURAN STRICT:
 
 public class AppSettingsService
 {
-    private readonly string _filePath;
-    public string DebugFilePath => _filePath;
+    private readonly string _settingsFilePath;
+    public string DebugFilePath => _settingsFilePath;
+
 
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         WriteIndented = true,
+        PropertyNameCaseInsensitive = true,
         TypeInfoResolver = new DefaultJsonTypeInfoResolver()
     };
     public AppSettingsService()
@@ -66,33 +70,48 @@ public class AppSettingsService
             Directory.CreateDirectory(configDir);
         }
 
-        _filePath = Path.Combine(configDir, "settings.json");
+        _settingsFilePath = Path.Combine(configDir, "settings.json");
     }
 
     public AppSettingsData LoadSettings()
     {
-        const int maxRetries = 3;
+        Debug.WriteLine($"[DEBUG-SETTINGS] ----------------------------------------");
+        Debug.WriteLine($"[DEBUG-SETTINGS] [READ] Target File Path: {_settingsFilePath}");
+        Console.WriteLine($"[DEBUG-SETTINGS] [READ] Target File Path: {_settingsFilePath}");
 
+        if (!File.Exists(_settingsFilePath))
+        {
+            Debug.WriteLine($"[DEBUG-SETTINGS] [READ] File 'settings.json' TIDAK DITEMUKAN. Memuat default fallback (IsDefaultViewA = True).");
+            Console.WriteLine($"[DEBUG-SETTINGS] [READ] File 'settings.json' TIDAK DITEMUKAN. Memuat default fallback (IsDefaultViewA = True).");
+            return new AppSettingsData();
+        }
+        const int maxRetries = 3;
         for (int attempt = 0; attempt < maxRetries; attempt++)
         {
             try
             {
-                if (!File.Exists(_filePath)) return new AppSettingsData();
+                string json = File.ReadAllText(_settingsFilePath);
+                Debug.WriteLine($"[DEBUG-SETTINGS] [READ] Raw File Content from Disk:\n{json}");
+                Console.WriteLine($"[DEBUG-SETTINGS] [READ] Raw File Content from Disk:\n{json}");
 
-                string json = File.ReadAllText(_filePath);
-                var data = JsonSerializer.Deserialize<AppSettingsData>(json);
-                if (data != null) return data;
+                var result = JsonSerializer.Deserialize<AppSettingsData>(json, _jsonOptions) ?? new AppSettingsData();
 
-                break; // json valid tapi null — tidak ada gunanya retry
+                Debug.WriteLine($"[DEBUG-SETTINGS] [READ SUCCESS] Parsed IsDefaultViewA = {result.IsDefaultViewA}");
+                Console.WriteLine($"[DEBUG-SETTINGS] [READ SUCCESS] Parsed IsDefaultViewA = {result.IsDefaultViewA}");
+                Debug.WriteLine($"[DEBUG-SETTINGS] ----------------------------------------");
+
+                return result;
             }
-            catch (IOException) when (attempt < maxRetries - 1)
+            catch (IOException ex) when (attempt < maxRetries - 1)
             {
-                // File kemungkinan sedang di-lock sesaat oleh proses lain (AV/indexer) pasca rename.
+                // File dikunci sementara oleh proses lain (indexer/AV), tunggu 50ms lalu coba lagi
+                Debug.WriteLine($"[DEBUG-SETTINGS] [READ RETRY] File locked, retrying attempt {attempt + 1}... Error: {ex.Message}");
                 Thread.Sleep(50);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[AppSettingsService] Load gagal: {ex}");
+                Debug.WriteLine($"[DEBUG-SETTINGS] [READ ERROR] Gagal membaca/deserialize settings.json! Error: {ex.Message}");
+                Console.WriteLine($"[DEBUG-SETTINGS] [READ ERROR] Gagal membaca/deserialize settings.json! Error: {ex.Message}");
                 break;
             }
         }
@@ -105,13 +124,31 @@ public class AppSettingsService
     /// </summary>
     public void SaveSettings(AppSettingsData settings)
     {
-        string tempFile = _filePath + ".tmp";
-        string json = JsonSerializer.Serialize(settings, _jsonOptions);
-        File.WriteAllText(tempFile, json);
+        Debug.WriteLine($"[DEBUG-SETTINGS] ----------------------------------------");
+        Debug.WriteLine($"[DEBUG-SETTINGS] [WRITE] Target File Path: '{_settingsFilePath}'");
+        Debug.WriteLine($"[DEBUG-SETTINGS] [WRITE] Incoming Data -> IsDefaultViewA: {settings.IsDefaultViewA}, OllamaUrl: '{settings.OllamaUrl}', SelectedModel: '{settings.SelectedModel}'");
+        Console.WriteLine($"[DEBUG-SETTINGS] ----------------------------------------");
+        Console.WriteLine($"[DEBUG-SETTINGS] [WRITE] Target File Path: '{_settingsFilePath}'");
+        Console.WriteLine($"[DEBUG-SETTINGS] [WRITE] Incoming Data -> IsDefaultViewA: {settings.IsDefaultViewA}, OllamaUrl: '{settings.OllamaUrl}', SelectedModel: '{settings.SelectedModel}'");
 
-        // Replace atomik: menghindari file settings.json corrupt/setengah-tertulis
-        // kalau proses mati di tengah jalan, dan menghindari torn-write kalau ada
-        // instance AppSettingsService lain yang baca bersamaan.
-        File.Move(tempFile, _filePath, overwrite: true);
+        try
+        {
+            string json = JsonSerializer.Serialize(settings, _jsonOptions);
+
+            // Write Atomic via Temp File untuk mencegah corrupt jika aplikasi mendadak mati
+            string tempFilePath = _settingsFilePath + ".tmp";
+            File.WriteAllText(tempFilePath, json);
+            File.Move(tempFilePath, _settingsFilePath, overwrite: true);
+
+            Debug.WriteLine($"[DEBUG-SETTINGS] [WRITE SUCCESS] Content written to file:\n{json}");
+            Console.WriteLine($"[DEBUG-SETTINGS] [WRITE SUCCESS] Content written to file:\n{json}");
+            Debug.WriteLine($"[DEBUG-SETTINGS] ----------------------------------------");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[DEBUG-SETTINGS] [WRITE CRITICAL FAIL] Gagal menulis ke file settings.json! StackTrace:\n{ex}");
+            Console.WriteLine($"[DEBUG-SETTINGS] [WRITE CRITICAL FAIL] Gagal menulis ke file settings.json! StackTrace:\n{ex}");
+            throw; // Re-throw agar caller dapat menangani error jika gagal
+        }
     }
 }

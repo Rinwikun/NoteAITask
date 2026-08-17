@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/Solution Items/">
     <File Path="obfuscar.xml" />
+    <File Path="Ringkasan-PRD.md" />
   </Folder>
   <Project Path="NoteAITask/NoteAITask.csproj" />
 </Solution>

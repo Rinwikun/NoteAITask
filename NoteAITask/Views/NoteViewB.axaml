@@ -1,0 +1,125 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NoteAITask.ViewModels"
+             x:Class="NoteAITask.Views.NoteViewB"
+             x:DataType="vm:NoteViewModel">
+
+    <!-- ========================================== -->
+    <!-- TAMPILAN B: EXPLORER VIEW (KONTEN KHUSUS)  -->
+    <!-- ========================================== -->
+    <Border Background="#1E1E2E" CornerRadius="8" Padding="15">
+        <Grid RowDefinitions="Auto, *">
+            <!-- Navigation Bar Tampilan B -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="0,0,0,15">
+                <Button Content="🔙 Kembali" Command="{Binding BackExplorerCommand}" IsEnabled="{Binding CanGoBack}" Background="#F38BA8" Foreground="#11111B" FontWeight="Bold" CornerRadius="6"/>
+                <TextBlock Text="{Binding CurrentExplorerPath}" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- LEVEL 0: GRID LIST FOLDER -->
+            <ScrollViewer Grid.Row="1" IsVisible="{Binding IsExplorerFolderLevel}">
+                <ScrollViewer.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="➕ Buat Folder Baru" Command="{Binding CreateNewFolderCommand}"/>
+                    </ContextMenu>
+                </ScrollViewer.ContextMenu>
+
+                <ItemsControl ItemsSource="{Binding Folders}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Command="{Binding $parent[UserControl].((vm:NoteViewModel)DataContext).OpenFolderExplorerCommand}" CommandParameter="{Binding}" Background="Transparent" Padding="0">
+                                <Border Width="140" Height="100" Background="#313244" CornerRadius="8" Margin="5" Padding="10">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="➕ Buat Folder Baru" Command="{Binding $parent[UserControl].((vm:NoteViewModel)DataContext).CreateNewFolderCommand}"/>
+                                            <Separator/>
+                                            <MenuItem Header="✏️ Ganti Nama Folder" Command="{Binding $parent[UserControl].((vm:NoteViewModel)DataContext).ShowRenameFolderDialogCommand}"/>
+                                            <MenuItem Header="🗑️ Hapus Folder" Command="{Binding $parent[UserControl].((vm:NoteViewModel)DataContext).DeleteFolderCommand}"/>
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
+                        
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="5">
+                                        <TextBlock Text="📁" FontSize="32" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding Name}" Foreground="White" FontSize="12" TextWrapping="Wrap" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- LEVEL 1: GRID LIST FILE DALAM FOLDER -->
+            <ScrollViewer Grid.Row="1" IsVisible="{Binding IsExplorerFileLevel}">
+                <ScrollViewer.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="➕ Buat File Note Baru" Command="{Binding CreateNewNoteCommand}"/>
+                    </ContextMenu>
+                </ScrollViewer.ContextMenu>
+
+                <ItemsControl ItemsSource="{Binding SelectedFolder.Notes}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Command="{Binding $parent[UserControl].((vm:NoteViewModel)DataContext).OpenFileExplorerCommand}" CommandParameter="{Binding}" Background="Transparent" Padding="0">
+                                <Border Width="140" Height="100" Background="#45475A" CornerRadius="8" Margin="5" Padding="10">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="➕ Buat File Note Baru" Command="{Binding $parent[UserControl].((vm:NoteViewModel)DataContext).CreateNewNoteCommand}"/>
+                                            <Separator/>
+                                            <MenuItem Header="✏️ Ganti Nama File" Command="{Binding $parent[UserControl].((vm:NoteViewModel)DataContext).ShowRenameNoteDialogCommand}"/>
+                                            <MenuItem Header="↩️ Undo Edit" Command="{Binding $parent[UserControl].((vm:NoteViewModel)DataContext).UndoCommand}"/>
+                                            <MenuItem Header="↪️ Redo Edit" Command="{Binding $parent[UserControl].((vm:NoteViewModel)DataContext).RedoCommand}"/>
+                                            <Separator/>
+                                            <MenuItem Header="🗑️ Hapus File Note" Command="{Binding $parent[UserControl].((vm:NoteViewModel)DataContext).DeleteNoteCommand}"/>
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
+
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="5">
+                                        <TextBlock Text="📄" FontSize="32" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding Title}" Foreground="#A6E3A1" FontSize="12" TextWrapping="Wrap" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- LEVEL 2: EDITOR KHUSUS TAMPILAN B -->
+            <Border Grid.Row="1" Background="#181825" CornerRadius="8" Padding="15" IsVisible="{Binding IsExplorerEditorLevel}">
+                <Grid RowDefinitions="Auto, *, Auto">
+                    <ProgressBar Grid.Row="0" IsIndeterminate="True" IsVisible="{Binding IsSaving}" Height="3" Margin="0,0,0,5"/>
+
+                    <TextBox Grid.Row="0" Text="{Binding EditorTitle}" FontSize="18" FontWeight="Bold" Background="#313244" Foreground="White" Margin="0,0,0,10" CornerRadius="6"/>
+        
+                    <TextBox Grid.Row="1" Text="{Binding EditorContent}" AcceptsReturn="True" TextWrapping="Wrap" Background="#313244" Foreground="White" CornerRadius="6">
+                        <TextBox.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="↩️ Undo" Command="{Binding UndoCommand}"/>
+                                <MenuItem Header="↪️ Redo" Command="{Binding RedoCommand}"/>
+                                <Separator/>
+                                <MenuItem Header="💾 Simpan" Command="{Binding SaveCurrentNoteCommand}" IsEnabled="{Binding HasUnsavedChanges}"/>
+                            </ContextMenu>
+                        </TextBox.ContextMenu>
+                    </TextBox>
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,10,0,0">
+                        <Button Content="↩️ Undo" Command="{Binding UndoCommand}" Background="#45475A" Foreground="White" CornerRadius="6"/>
+                        <Button Content="↪️ Redo" Command="{Binding RedoCommand}" Background="#45475A" Foreground="White" CornerRadius="6"/>
+                        <Button Content="🗑️ Hapus File" Command="{Binding DeleteNoteCommand}" Background="#F38BA8" Foreground="#11111B" CornerRadius="6"/>
+                        <Button Content="💾 Simpan" Command="{Binding SaveCurrentNoteCommand}" IsEnabled="{Binding HasUnsavedChanges}" Background="#89B4FA" Foreground="#11111B" FontWeight="Bold" CornerRadius="6"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>
