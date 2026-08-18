@@ -28,7 +28,12 @@ If you do not agree to these terms, do not submit a pull request.
 - [.NET 10.0 SDK](https://dotnet.microsoft.com/)
 - [Ollama](https://ollama.ai/) running locally, with a model pulled
   (e.g. `ollama pull qwen2.5-coder:7b`)
-
+- An IDE with C#/Avalonia support (optional, any works via `dotnet` CLI):
+  - [Visual Studio](https://visualstudio.microsoft.com/) (Windows only)
+  - [Visual Studio Code](https://code.visualstudio.com/) with the C# Dev Kit
+    extension (cross-platform)
+  - [JetBrains Rider](https://www.jetbrains.com/rider/) (cross-platform)
+  
 ### Clone & Build
 ```bash
 git clone https://github.com/Rinwikun/NoteAITask.git
