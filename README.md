@@ -4,7 +4,7 @@
 
 <h1 align="center">NoteAI Task Terminal</h1>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](https://github.com/Rinwikun/NoteAITask/blob/main/LICENSE)
 [![NET Target](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![AvaloniaUI](https://img.shields.io/badge/UI-AvaloniaUI-purple?logo=avalonia)](https://avaloniaui.net/)
 [![Ollama](https://img.shields.io/badge/AI%20Engine-Ollama-black?logo=ollama&logoColor=white)](https://ollama.com/)
@@ -141,7 +141,7 @@ irm https://raw.githubusercontent.com/Rinwikun/NoteAITask/main/scripts/install.p
 - **Metadata & Symbol Stripping**: Suppresses debug symbol generation to prevent internal source path leaks.
 - **Obfuscation Engine**: Integrated Obfuscar pipeline to scramble class, property, and method signatures against decompilers.
 - **AOT Compilation**: Ahead-of-Time compilation for native performance and reduced runtime reflection.
-- **Local AI Model Enforcement**: All AI model interactions are strictly local; no external API calls are made, ensuring data privacy.
+- **Local AI Model Enforcement**: By default, all AI model interactions are strictly local via Ollama; no external API calls are made. *(Optional cloud AI provider support via user-supplied API key is planned — see roadmap.)*
 - **Path Leakage Prevention**: The AI agent is designed to resolve and validate paths without exposing sensitive directory structures.
 - **Execution Sandbox**: All terminal commands are executed in a controlled environment to prevent unauthorized system modifications.
 
@@ -157,9 +157,16 @@ We highly value your feedback! If you test or use NoteAI Task Terminal, please c
 - 💡 Feature Requests & Reviews: Leaving your review, suggestions, or feature requests in the Discussions tab.
 - 🧪 Testing Log Submissions: Sharing your execution logs or testing results on different OS environments (Linux distributions, macOS, Windows).
 
+## 🤝 Contributing
+This repository accepts pull requests. By submitting a contribution, you
+agree to the terms in [LICENSE §4 (Contributions)](https://github.com/Rinwikun/NoteAITask/blob/main/LICENSE).
+See `CONTRIBUTING.md` for setup and PR guidelines.
+
 ## 👤 Author & Credits
 Created with ❤️ by Rinwikun
-Distributed under the [MIT License](https://github.com/Rinwikun/NoteAITask/edit/main/LICENSE).
+Source code distributed under a [Proprietary Source-Available License](https://github.com/Rinwikun/NoteAITask/blob/main/LICENSE).
+End-user application usage governed by the [EULA](https://github.com/Rinwikun/NoteAITask/blob/main/EULA.md).
+
 
 ## ☕ Support the Project
 [![Trakteer](https://img.shields.io/badge/Trakteer-Traktir%20Coffee-red?style=for-the-badge&logo=coffee&logoColor=white)](https://trakteer.id/erwin%20wijaya)
